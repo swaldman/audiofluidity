@@ -4,7 +4,7 @@ import scala.xml.{Elem,Node,MetaData,Null,Text,TopScope,UnprefixedAttribute}
 
 import java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
 
-import PodcastFeed.*
+import RssFeed.*
 
 object Xmlable:
   private def elem(label : String, attributes1 : MetaData, children : Node*) : Elem =
@@ -23,8 +23,8 @@ object Xmlable:
          itemNodes ++ x.skipDays.map( _.toNode ) ++ x.skipHours.map( _.toNode ) ++ x.textInput.map( _.toNode ) ++
           x.rating.map( _.toNode ) ++ x.image.map( _.toNode ) ++ x.ttl.map( _.toNode ) ++ x.cloud.map( _.toNode ) ++ x.docs.map( _.toNode ) ++
           x.generator.map( _.toNode ) ++ x.categories.map( _.toNode ) ++ x.lastBuildDate.map( _.toNode ) ++ x.pubDate.map( _.toNode ) ++
-          x.webMaster.map( _.toNode ) ++ x.managingEditor.map( _.toNode ) ++ x.copyright.map( _.toNode ) ++ x.language.map( _.toNode ) +
-          x.description.toNode + x.link.toNode + x.title.toNode
+          x.webMaster.map( _.toNode ) ++ x.managingEditor.map( _.toNode ) ++ x.copyright.map( _.toNode ) ++ x.language.map( _.toNode ) :+
+          x.description.toNode :+ x.link.toNode :+ x.title.toNode
       elem("channel",kids.toSeq : _*)
   given Xmlable[Cloud] with
     extension(x : Cloud) def toNode : Node =
@@ -73,8 +73,8 @@ object Xmlable:
     extension(x : Item) def toNode : Node =
       val kids =
         x.categories.map( _.toNode ) ++ x.source.map( _.toNode ) ++ x.pubDate.map( _.toNode ) ++ x.guid.map( _.toNode ) ++ x.enclosure.map( _.toNode ) ++
-          x.comments.map( _.toNode) + x.author.toNode + x.description.toNode + x.link.toNode + x.title.toNode
-      elem("item", kids.toSeq : _*)
+          x.comments.map( _.toNode) :+ x.author.toNode :+ x.description.toNode :+ x.link.toNode :+ x.title.toNode
+      elem("item", kids : _*)
   given Xmlable[Language] with
     extension(x : Language) def toNode : Node = elem("language", new Text(x.code.rendered))
   given Xmlable[LastBuildDate] with
@@ -93,10 +93,13 @@ object Xmlable:
       elem("pubDate", new Text(dateStr))
   given Xmlable[Rating] with
     extension(x : Rating) def toNode : Node = elem("rating", new Text(x.contents))
+  given Xmlable[RssFeed] with
+    extension(x : RssFeed) def toNode : Node =
+      elem("rss", new UnprefixedAttribute("version", Version, Null), x.channel.toNode)
   given Xmlable[SkipDays] with
-    extension(x : SkipDays) def toNode : Node = elem("skipDays", x.days.map( _.toNode ).toSeq : _*)
+    extension(x : SkipDays) def toNode : Node = elem("skipDays", x.days.map( _.toNode ) : _*)
   given Xmlable[SkipHours] with
-    extension(x : SkipHours) def toNode : Node = elem("skipHours", x.hours.map( _.toNode ).toSeq : _*)
+    extension(x : SkipHours) def toNode : Node = elem("skipHours", x.hours.map( _.toNode ) : _*)
   given Xmlable[Source] with
     extension(x : Source) def toNode : Node = elem("source", new UnprefixedAttribute("url",x.url,Null), new Text(x.title))
   given Xmlable[TextInput] with
