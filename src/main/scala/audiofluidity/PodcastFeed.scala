@@ -1,7 +1,7 @@
 package audiofluidity
 
 import scala.collection.*
-import scala.xml.{NamespaceBinding,TopScope}
+import scala.xml.{Elem,NamespaceBinding,TopScope}
 
 object PodcastFeed:
   val RdfContentModuleNamespaceBinding = new NamespaceBinding("content","http://purl.org/rss/1.0/modules/content/", TopScope)
@@ -31,6 +31,9 @@ object PodcastFeed:
     case class  Season(number : Int)
     case class  Title(title : String)
     case class  Type(validType : Itunes.ValidPodcastType)
+
+    def decorateStandardFeedXml(rssFeedXml : Elem) : Elem =
+      rssFeedXml.copy(scope=AppleNamespaceBinding)
 
 
 

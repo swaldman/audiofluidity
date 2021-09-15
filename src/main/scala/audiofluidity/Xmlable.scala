@@ -1,6 +1,6 @@
 package audiofluidity
 
-import scala.xml.{Elem,Node,MetaData,Null,Text,TopScope,UnprefixedAttribute}
+import scala.xml.{Elem,MetaData,Node,Null,Text,TopScope,UnprefixedAttribute}
 
 import java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
 
@@ -14,22 +14,22 @@ object Xmlable:
 
   // Standard RSS Elements
   given Xmlable[Author] with
-    extension(x : Author) def toNode : Node = elem("author", new Text(x.email))
+    extension(x : Author) def toElem : Elem = elem("author", new Text(x.email))
   given Xmlable[Category] with
-    extension(x : Category) def toNode : Node =
+    extension(x : Category) def toElem : Elem =
       elem("category", new UnprefixedAttribute("domain", x.domain, Null), new Text(x.text))
   given Xmlable[Channel] with
-    extension(x : Channel) def toNode : Node =
-      val itemNodes = x.items.map( _.toNode )
+    extension(x : Channel) def toElem : Elem =
+      val itemElems = x.items.map( _.toElem )
       val kids =
-         itemNodes ++ x.skipDays.map( _.toNode ) ++ x.skipHours.map( _.toNode ) ++ x.textInput.map( _.toNode ) ++
-          x.rating.map( _.toNode ) ++ x.image.map( _.toNode ) ++ x.ttl.map( _.toNode ) ++ x.cloud.map( _.toNode ) ++ x.docs.map( _.toNode ) ++
-          x.generator.map( _.toNode ) ++ x.categories.map( _.toNode ) ++ x.lastBuildDate.map( _.toNode ) ++ x.pubDate.map( _.toNode ) ++
-          x.webMaster.map( _.toNode ) ++ x.managingEditor.map( _.toNode ) ++ x.copyright.map( _.toNode ) ++ x.language.map( _.toNode ) :+
-          x.description.toNode :+ x.link.toNode :+ x.title.toNode
+         itemElems ++ x.skipDays.map( _.toElem ) ++ x.skipHours.map( _.toElem ) ++ x.textInput.map( _.toElem ) ++
+          x.rating.map( _.toElem ) ++ x.image.map( _.toElem ) ++ x.ttl.map( _.toElem ) ++ x.cloud.map( _.toElem ) ++ x.docs.map( _.toElem ) ++
+          x.generator.map( _.toElem ) ++ x.categories.map( _.toElem ) ++ x.lastBuildDate.map( _.toElem ) ++ x.pubDate.map( _.toElem ) ++
+          x.webMaster.map( _.toElem ) ++ x.managingEditor.map( _.toElem ) ++ x.copyright.map( _.toElem ) ++ x.language.map( _.toElem ) :+
+          x.description.toElem :+ x.link.toElem :+ x.title.toElem
       elem("channel",kids.toSeq : _*)
   given Xmlable[Cloud] with
-    extension(x : Cloud) def toNode : Node =
+    extension(x : Cloud) def toElem : Elem =
       val attributes = new UnprefixedAttribute("domain", x.domain,
         new UnprefixedAttribute("port", x.port.toString,
           new UnprefixedAttribute("path", x.path,
@@ -41,17 +41,17 @@ object Xmlable:
       )
       elem("cloud", attributes)
   given Xmlable[Comments] with
-    extension(x : Comments) def toNode : Node = elem("comments", new Text(x.url))
+    extension(x : Comments) def toElem : Elem = elem("comments", new Text(x.url))
   given Xmlable[Copyright] with
-    extension(x : Copyright) def toNode : Node = elem("copyright", new Text(x.notice))
+    extension(x : Copyright) def toElem : Elem = elem("copyright", new Text(x.notice))
   given Xmlable[Day] with
-    extension(x : Day) def toNode : Node = elem("day", new Text(x.day.toString))
+    extension(x : Day) def toElem : Elem = elem("day", new Text(x.day.toString))
   given Xmlable[Description] with
-    extension(x : Description) def toNode : Node = elem("description", new Text(x.text))
+    extension(x : Description) def toElem : Elem = elem("description", new Text(x.text))
   given Xmlable[Docs] with
-    extension(x : Docs) def toNode : Node = elem("docs", new Text(x.url))
+    extension(x : Docs) def toElem : Elem = elem("docs", new Text(x.url))
   given Xmlable[Enclosure] with
-    extension(x : Enclosure) def toNode : Node =
+    extension(x : Enclosure) def toElem : Elem =
       val attributes = UnprefixedAttribute("url", x.url,
         new UnprefixedAttribute("length", x.length.toString,
           new UnprefixedAttribute("type", x.`type`, Null)
@@ -59,63 +59,63 @@ object Xmlable:
       )
       elem("enclosure", attributes)
   given Xmlable[Generator] with
-    extension(x : Generator) def toNode : Node = elem("generator", new Text(x.description))
+    extension(x : Generator) def toElem : Elem = elem("generator", new Text(x.description))
   given Xmlable[Guid] with
-    extension(x : Guid) def toNode : Node = elem("guid", new Text(x.contents))
+    extension(x : Guid) def toElem : Elem = elem("guid", new Text(x.contents))
   given Xmlable[Hour] with
-    extension(x : Hour) def toNode : Node = elem("hour", new Text(x.hour.toString))
+    extension(x : Hour) def toElem : Elem = elem("hour", new Text(x.hour.toString))
   given Xmlable[Height] with
-    extension(x : Height) def toNode : Node = elem("height", new Text(x.pixels.toString))
+    extension(x : Height) def toElem : Elem = elem("height", new Text(x.pixels.toString))
   given Xmlable[Image] with
-    extension(x : Image) def toNode : Node =
-      val reverseKids : List[Node] =
-        x.description.map(_.toNode) ++: x.height.map(_.toNode) ++: x.width.map( _.toNode ) ++: (x.link.toNode :: x.title.toNode :: x.url.toNode :: Nil)
+    extension(x : Image) def toElem : Elem =
+      val reverseKids : List[Elem] =
+        x.description.map(_.toElem) ++: x.height.map(_.toElem) ++: x.width.map( _.toElem ) ++: (x.link.toElem :: x.title.toElem :: x.url.toElem :: Nil)
       elem("image", reverseKids.reverse : _*)
   given Xmlable[Item] with
-    extension(x : Item) def toNode : Node =
+    extension(x : Item) def toElem : Elem =
       val kids =
-        x.categories.map( _.toNode ) ++ x.source.map( _.toNode ) ++ x.pubDate.map( _.toNode ) ++ x.guid.map( _.toNode ) ++ x.enclosure.map( _.toNode ) ++
-          x.comments.map( _.toNode) :+ x.author.toNode :+ x.description.toNode :+ x.link.toNode :+ x.title.toNode
+        x.categories.map( _.toElem ) ++ x.source.map( _.toElem ) ++ x.pubDate.map( _.toElem ) ++ x.guid.map( _.toElem ) ++ x.enclosure.map( _.toElem ) ++
+          x.comments.map( _.toElem) :+ x.author.toElem :+ x.description.toElem :+ x.link.toElem :+ x.title.toElem
       elem("item", kids : _*)
   given Xmlable[Language] with
-    extension(x : Language) def toNode : Node = elem("language", new Text(x.code.rendered))
+    extension(x : Language) def toElem : Elem = elem("language", new Text(x.code.rendered))
   given Xmlable[LastBuildDate] with
-    extension(x : LastBuildDate) def toNode : Node =
+    extension(x : LastBuildDate) def toElem : Elem =
       val dateStr = RFC_1123_DATE_TIME.format(x.date)
       elem("lastBuildDate", new Text(dateStr))
   given Xmlable[Link] with
-    extension(x : Link) def toNode : Node = elem("link", new Text(x.location))
+    extension(x : Link) def toElem : Elem = elem("link", new Text(x.location))
   given Xmlable[ManagingEditor] with
-    extension(x : ManagingEditor) def toNode : Node = elem("managingEditor", new Text(x.email))
+    extension(x : ManagingEditor) def toElem : Elem = elem("managingEditor", new Text(x.email))
   given Xmlable[Name] with
-    extension(x : Name) def toNode : Node = elem("name", new Text(x.text))
+    extension(x : Name) def toElem : Elem = elem("name", new Text(x.text))
   given Xmlable[PubDate] with
-    extension(x : PubDate) def toNode : Node =
+    extension(x : PubDate) def toElem : Elem =
       val dateStr = RFC_1123_DATE_TIME.format(x.date)
       elem("pubDate", new Text(dateStr))
   given Xmlable[Rating] with
-    extension(x : Rating) def toNode : Node = elem("rating", new Text(x.contents))
+    extension(x : Rating) def toElem : Elem = elem("rating", new Text(x.contents))
   given Xmlable[RssFeed] with
-    extension(x : RssFeed) def toNode : Node =
-      elem("rss", new UnprefixedAttribute("version", Version, Null), x.channel.toNode)
+    extension(x : RssFeed) def toElem : Elem =
+      elem("rss", new UnprefixedAttribute("version", Version, Null), x.channel.toElem)
   given Xmlable[SkipDays] with
-    extension(x : SkipDays) def toNode : Node = elem("skipDays", x.days.map( _.toNode ) : _*)
+    extension(x : SkipDays) def toElem : Elem = elem("skipDays", x.days.map( _.toElem ) : _*)
   given Xmlable[SkipHours] with
-    extension(x : SkipHours) def toNode : Node = elem("skipHours", x.hours.map( _.toNode ) : _*)
+    extension(x : SkipHours) def toElem : Elem = elem("skipHours", x.hours.map( _.toElem ) : _*)
   given Xmlable[Source] with
-    extension(x : Source) def toNode : Node = elem("source", new UnprefixedAttribute("url",x.url,Null), new Text(x.title))
+    extension(x : Source) def toElem : Elem = elem("source", new UnprefixedAttribute("url",x.url,Null), new Text(x.title))
   given Xmlable[TextInput] with
-    extension(x : TextInput) def toNode : Node = elem("textInput", x.title.toNode, x.description.toNode, x.name.toNode, x.link.toNode)
+    extension(x : TextInput) def toElem : Elem = elem("textInput", x.title.toElem, x.description.toElem, x.name.toElem, x.link.toElem)
   given Xmlable[Title] with
-    extension(x : Title) def toNode : Node = elem("title", new Text(x.text))
+    extension(x : Title) def toElem : Elem = elem("title", new Text(x.text))
   given Xmlable[Ttl] with
-    extension(x : Ttl) def toNode : Node = elem("ttl", new Text(x.minutes.toString))
+    extension(x : Ttl) def toElem : Elem = elem("ttl", new Text(x.minutes.toString))
   given Xmlable[Url] with
-    extension(x : Url) def toNode : Node = elem("url", new Text(x.location))
+    extension(x : Url) def toElem : Elem = elem("url", new Text(x.location))
   given Xmlable[Webmaster] with
-    extension(x : Webmaster) def toNode : Node = elem("webmaster", new Text(x.email))
+    extension(x : Webmaster) def toElem : Elem = elem("webmaster", new Text(x.email))
   given Xmlable[Width] with
-    extension(x : Width) def toNode : Node = elem("width", new Text(x.pixels.toString))
+    extension(x : Width) def toElem : Elem = elem("width", new Text(x.pixels.toString))
 
   // Apple-specific elements
   private def ielem(label : String, attributes1 : MetaData, children : Node*) : Elem =
@@ -123,52 +123,43 @@ object Xmlable:
   private def ielem(label : String, children : Node*) : Elem = elem(label, Null, children : _*)
 
   given given_Xmlable_Itunes_Author : Xmlable[Itunes.Author] with
-    extension(x : Itunes.Author) def toNode : Node = ielem("author", new Text(x.fullName))
+    extension(x : Itunes.Author) def toElem : Elem = ielem("author", new Text(x.fullName))
   given Xmlable[Itunes.Block.type] with
-    extension(x : Itunes.Block.type ) def toNode : Node = ielem("block", new Text("Yes"))
+    extension(x : Itunes.Block.type ) def toElem : Elem = ielem("block", new Text("Yes"))
   given given_Xmlable_Itunes_Category : Xmlable[Itunes.Category] with
-    extension(x : Itunes.Category) def toNode : Node =
-      ielem("category", new UnprefixedAttribute("text", x.text, Null), x.subcategory.map( _.toNode ).toSeq : _*)
+    extension(x : Itunes.Category) def toElem : Elem =
+      ielem("category", new UnprefixedAttribute("text", x.text, Null), x.subcategory.map( _.toElem ).toSeq : _*)
   given Xmlable[Itunes.Complete.type] with
-    extension(x : Itunes.Complete.type ) def toNode : Node = ielem("complete", new Text("Yes"))
+    extension(x : Itunes.Complete.type ) def toElem : Elem = ielem("complete", new Text("Yes"))
   given Xmlable[Itunes.Duration] with
-    extension(x : Itunes.Duration) def toNode : Node = ielem("duration", new Text(x.seconds.toString))
+    extension(x : Itunes.Duration) def toElem : Elem = ielem("duration", new Text(x.seconds.toString))
   given Xmlable[Itunes.Email] with
-    extension(x : Itunes.Email) def toNode : Node = ielem("email", new Text(x.email))
+    extension(x : Itunes.Email) def toElem : Elem = ielem("email", new Text(x.email))
   given Xmlable[Itunes.Episode] with
-    extension(x : Itunes.Episode) def toNode : Node = ielem("episode", new Text(x.number.toString))
+    extension(x : Itunes.Episode) def toElem : Elem = ielem("episode", new Text(x.number.toString))
   given Xmlable[Itunes.EpisodeType] with
-    extension(x : Itunes.EpisodeType) def toNode : Node = ielem("episodeType", new Text(x.validEpisodeType.toString))
+    extension(x : Itunes.EpisodeType) def toElem : Elem = ielem("episodeType", new Text(x.validEpisodeType.toString))
   given Xmlable[Itunes.Explicit] with
-    extension(x : Itunes.Explicit) def toNode : Node = ielem("explicit", new Text(x.isExplicit.toString))
+    extension(x : Itunes.Explicit) def toElem : Elem = ielem("explicit", new Text(x.isExplicit.toString))
   given given_Xmlable_Itunes_Image : Xmlable[Itunes.Image] with
-    extension(x : Itunes.Image) def toNode : Node =
+    extension(x : Itunes.Image) def toElem : Elem =
       ielem("image", new UnprefixedAttribute("href", x.href, Null))
   given Xmlable[Itunes.Keywords] with
-    extension(x : Itunes.Keywords) def toNode : Node = ielem("keywords", new Text(x.keywords.mkString(",")))
+    extension(x : Itunes.Keywords) def toElem : Elem = ielem("keywords", new Text(x.keywords.mkString(",")))
   given given_Xmlable_Itunes_Name : Xmlable[Itunes.Name] with
-    extension(x : Itunes.Name) def toNode : Node = ielem("name", new Text(x.name))
+    extension(x : Itunes.Name) def toElem : Elem = ielem("name", new Text(x.name))
   given Xmlable[Itunes.NewFeedUrl] with
-    extension(x : Itunes.NewFeedUrl) def toNode : Node = ielem("new-feed-url", new Text(x.location))
+    extension(x : Itunes.NewFeedUrl) def toElem : Elem = ielem("new-feed-url", new Text(x.location))
   given Xmlable[Itunes.Owner] with
-    extension(x : Itunes.Owner) def toNode : Node = ielem("owner", x.name.toNode, x.email.toNode)
+    extension(x : Itunes.Owner) def toElem : Elem = ielem("owner", x.name.toElem, x.email.toElem)
   given Xmlable[Itunes.Season] with
-    extension(x : Itunes.Season) def toNode : Node = ielem("season", new Text(x.number.toString))
+    extension(x : Itunes.Season) def toElem : Elem = ielem("season", new Text(x.number.toString))
   given given_Xmlable_Itunes_Title : Xmlable[Itunes.Title] with
-    extension(x : Itunes.Title) def toNode : Node = ielem("title", new Text(x.title))
+    extension(x : Itunes.Title) def toElem : Elem = ielem("title", new Text(x.title))
   given Xmlable[Itunes.Type] with
-    extension(x : Itunes.Type) def toNode : Node = ielem("type", new Text(x.validType.toString))
-
-
-
-
-
-
-
-
-
+    extension(x : Itunes.Type) def toElem : Elem = ielem("type", new Text(x.validType.toString))
 
 trait Xmlable[T]:
-  extension(x : T) def toNode : Node
+  extension(x : T) def toElem : Elem
 
 
