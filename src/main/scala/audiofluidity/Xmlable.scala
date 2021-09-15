@@ -1,6 +1,6 @@
 package audiofluidity
 
-import scala.xml.{Elem,MetaData,Node,Null,Text,TopScope,UnprefixedAttribute}
+import scala.xml.{Elem,MetaData,Node,Null,PCData,Text,TopScope,UnprefixedAttribute}
 
 import java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
 
@@ -47,7 +47,7 @@ object Xmlable:
   given Xmlable[Day] with
     extension(x : Day) def toElem : Elem = elem("day", new Text(x.day.toString))
   given Xmlable[Description] with
-    extension(x : Description) def toElem : Elem = elem("description", new Text(x.text))
+    extension(x : Description) def toElem : Elem = elem("description", new PCData(x.text))
   given Xmlable[Docs] with
     extension(x : Docs) def toElem : Elem = elem("docs", new Text(x.url))
   given Xmlable[Enclosure] with
