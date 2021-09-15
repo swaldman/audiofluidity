@@ -5,12 +5,14 @@ import scala.xml.{Elem,Node,MetaData,Null,Text,TopScope,UnprefixedAttribute}
 import java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
 
 import RssFeed.*
+import PodcastFeed.Itunes
 
 object Xmlable:
   private def elem(label : String, attributes1 : MetaData, children : Node*) : Elem =
     new Elem(prefix=null, label=label, attributes1=attributes1, scope=TopScope, minimizeEmpty=true, children : _*)
   private def elem(label : String, children : Node*) : Elem = elem(label, Null, children : _*)
 
+  // Standard RSS Elements
   given Xmlable[Author] with
     extension(x : Author) def toNode : Node = elem("author", new Text(x.email))
   given Xmlable[Category] with
@@ -114,6 +116,52 @@ object Xmlable:
     extension(x : Webmaster) def toNode : Node = elem("webmaster", new Text(x.email))
   given Xmlable[Width] with
     extension(x : Width) def toNode : Node = elem("width", new Text(x.pixels.toString))
+
+  // Apple-specific elements
+  private def ielem(label : String, attributes1 : MetaData, children : Node*) : Elem =
+    new Elem(prefix="itunes", label=label, attributes1=attributes1, scope=TopScope, minimizeEmpty=true, children : _*)
+  private def ielem(label : String, children : Node*) : Elem = elem(label, Null, children : _*)
+
+  given given_Xmlable_Itunes_Author : Xmlable[Itunes.Author] with
+    extension(x : Itunes.Author) def toNode : Node = ielem("author", new Text(x.fullName))
+  given Xmlable[Itunes.Block.type] with
+    extension(x : Itunes.Block.type ) def toNode : Node = ielem("block", new Text("Yes"))
+  given given_Xmlable_Itunes_Category : Xmlable[Itunes.Category] with
+    extension(x : Itunes.Category) def toNode : Node =
+      ielem("category", new UnprefixedAttribute("text", x.text, Null), x.subcategory.map( _.toNode ).toSeq : _*)
+  given Xmlable[Itunes.Complete.type] with
+    extension(x : Itunes.Complete.type ) def toNode : Node = ielem("complete", new Text("Yes"))
+  given Xmlable[Itunes.Duration] with
+    extension(x : Itunes.Duration) def toNode : Node = ielem("duration", new Text(x.seconds.toString))
+  given Xmlable[Itunes.Email] with
+    extension(x : Itunes.Email) def toNode : Node = ielem("email", new Text(x.email))
+  given Xmlable[Itunes.Episode] with
+    extension(x : Itunes.Episode) def toNode : Node = ielem("episode", new Text(x.number.toString))
+  given Xmlable[Itunes.EpisodeType] with
+    extension(x : Itunes.EpisodeType) def toNode : Node = ielem("episodeType", new Text(x.validEpisodeType.toString))
+  given Xmlable[Itunes.Explicit] with
+    extension(x : Itunes.Explicit) def toNode : Node = ielem("explicit", new Text(x.isExplicit.toString))
+  given given_Xmlable_Itunes_Image : Xmlable[Itunes.Image] with
+    extension(x : Itunes.Image) def toNode : Node =
+      ielem("image", new UnprefixedAttribute("href", x.href, Null))
+  given Xmlable[Itunes.Keywords] with
+    extension(x : Itunes.Keywords) def toNode : Node = ielem("keywords", new Text(x.keywords.mkString(",")))
+  given given_Xmlable_Itunes_Name : Xmlable[Itunes.Name] with
+    extension(x : Itunes.Name) def toNode : Node = ielem("name", new Text(x.name))
+  given Xmlable[Itunes.NewFeedUrl] with
+    extension(x : Itunes.NewFeedUrl) def toNode : Node = ielem("new-feed-url", new Text(x.location))
+  given Xmlable[Itunes.Owner] with
+    extension(x : Itunes.Owner) def toNode : Node = ielem("owner", x.name.toNode, x.email.toNode)
+  given Xmlable[Itunes.Season] with
+    extension(x : Itunes.Season) def toNode : Node = ielem("season", new Text(x.number.toString))
+  given given_Xmlable_Itunes_Title : Xmlable[Itunes.Title] with
+    extension(x : Itunes.Title) def toNode : Node = ielem("title", new Text(x.title))
+  given Xmlable[Itunes.Type] with
+    extension(x : Itunes.Type) def toNode : Node = ielem("type", new Text(x.validType.toString))
+
+
+
+
 
 
 

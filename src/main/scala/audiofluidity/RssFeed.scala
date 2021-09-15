@@ -4,10 +4,10 @@ import java.time.Instant
 import scala.collection.*
 
 object RssFeed:
+  val Version = "2.0"
+
   enum ValidDay:
     case Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday
-
-  val Version = "2.0"
 
   case class Author(email : String)
   case class Category(domain : String, text : String)
