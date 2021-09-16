@@ -1,6 +1,6 @@
 package audiofluidity
 
-import java.time.Instant
+import java.time.{Instant,ZonedDateTime}
 import scala.collection.*
 
 object RssFeed:
@@ -39,7 +39,7 @@ object RssFeed:
   case class Day(day : ValidDay)
   case class Description(text : String)
   case class Docs(url : String = "https://cyber.harvard.edu/rss/rss.html")
-  case class Enclosure(url : String, length : Int, `type` : String)
+  case class Enclosure(url : String, length : Long, `type` : String)
   case class Generator(description : String)
   case class Guid(contents : String)
   case class Hour(hour : Int) // shuld be 1 to 24

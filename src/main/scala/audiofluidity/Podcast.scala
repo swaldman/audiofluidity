@@ -5,7 +5,7 @@ import PodcastFeed.Itunes.{ValidEpisodeType, ValidPodcastType}
 
 object Podcast:
   case class Admin( name : String, email : String)
-  case class Context(
+  case class Source(
     baseDir   : String,
     staticDir : String = "html",
     mediaDir  : String = "media"
@@ -16,15 +16,16 @@ object Podcast:
     feedPath        : String          = "rss.xml"
   )
   case class Episode(
-    title        : String,
-    uid          : String,                                   // if number then <itunes:episode>
-    description  : String,
-    pubDate      : String,
-    authorEmail  : Option[String],                            // defaults to parent.defaultAuthorEmail or fails if not set
-    seasonNumber : Option[Int],                               // <itunes:season>
-    imageUrl     : Option[String],                            // <itunes:image>
-    episodeType  : ValidEpisodeType = ValidEpisodeType.full,  // <itunes:episodeType>
-    block        : Boolean          = false,                  // <itunes:block>Yes</itunes:block>
+    title                : String,
+    uid                  : String,                                    // if number then <itunes:episode>
+    description          : String,
+    pubDate              : String,                                    // Format: Sun, 19 May 2002 15:21:36 GMT
+    sourceAudioFileName  : String,
+    authorEmail          : Option[String],                            // defaults to parent.defaultAuthorEmail or fails if not set
+    seasonNumber         : Option[Int],                               // <itunes:season>
+    imageUrl             : Option[String],                            // <itunes:image>
+    episodeType          : ValidEpisodeType = ValidEpisodeType.full,  // <itunes:episodeType>
+    block                : Boolean          = false,                  // <itunes:block>Yes</itunes:block>
   )
   object EpisodeRenderer:
     class Default extends EpisodeRenderer:
@@ -41,13 +42,14 @@ object Podcast:
 import Podcast.*
 
 case class Podcast(
-  context            : Context,
-  title              : String,
+  source             : Source,
+  format             : Format,                
   mainUrl            : String,
+  title              : String,
   guidPrefix         : String,
   description        : String,
   editorEmail        : String,                                               // managingEditor
-  imageUrl           : String,
+  imagePath          : String,                                               // relative to mainUrl or full URL
   language           : Option[LanguageCode]     = None,
   admin              : Option[Admin]            = None,                      // <itunes:owner> and <webmaster>
   defaultAuthorEmail : Option[String],
