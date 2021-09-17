@@ -1,6 +1,7 @@
 package audiofluidity
 
-import scala.collection._
+import scala.collection.*
+import scala.xml.*
 
 class AudiofluidityException(message : String, cause : Throwable = null) extends Exception(message, cause)
 class NoExtensionForAudioFile(message : String, cause : Throwable = null) extends AudiofluidityException(message, cause)
@@ -13,8 +14,13 @@ val SupportedExtensions = immutable.Map(
   "mp3" -> "audio/mpeg"
 )
 
-private def makeGuid(podcast : Podcast, episode : Podcast.Episode) : String = s"${podcast.guidPrefix}/${episode.uid}"
+private def uniqueChildElem(node : Node, elemName : String) : Elem =
+  (node \ elemName).collect{ case e : Elem => e }.ensuring(_.length == 1, s"Expected unique child '${elemName}' of Node, found multiple or nonr.").head
 
+private def _guid(podcast : Podcast, episode : Podcast.Episode) : String = s"${podcast.guidPrefix}/${episode.uid}"
+
+private def _mediaFileName(podcast : Podcast, episode : Podcast.Episode, extension : String) : String =
+s"${podcast.mediaFilePrefix}${episode.uid}.${audioFileExtension}"
 private def audioFileExtension(filename : String) : String =
   val preindex = filename.lastIndexOf('.')
   if preindex <= 0 || preindex >= (filename.length-1) then throw new NoExtensionForAudioFile(s"Supposed audio file '${filename}' lacks a required Extension")

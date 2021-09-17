@@ -1,6 +1,7 @@
 package audiofluidity
 
 import scala.collection.*
+import PodcastFeed.Itunes  
 import PodcastFeed.Itunes.{ValidEpisodeType, ValidPodcastType}
 
 object Podcast:
@@ -17,15 +18,16 @@ object Podcast:
   )
   case class Episode(
     title                : String,
-    uid                  : String,                                    // if number then <itunes:episode>
+    uid                  : String,                                      // if number then <itunes:episode>
     description          : String,
-    pubDate              : String,                                    // Format: Sun, 19 May 2002 15:21:36 GMT
+    pubDate              : String,                                      // Format: Sun, 19 May 2002 15:21:36 GMT
     sourceAudioFileName  : String,
-    authorEmail          : Option[String],                            // defaults to parent.defaultAuthorEmail or fails if not set
-    seasonNumber         : Option[Int],                               // <itunes:season>
-    imageUrl             : Option[String],                            // <itunes:image>
-    episodeType          : ValidEpisodeType = ValidEpisodeType.full,  // <itunes:episodeType>
-    block                : Boolean          = false,                  // <itunes:block>Yes</itunes:block>
+    authorEmail          : Option[String],                              // defaults to parent.defaultAuthorEmail or fails if not set
+    seasonNumber         : Option[Int],                                 // <itunes:season>
+    imageUrl             : Option[String],                              // <itunes:image>
+    episodeType          : ValidEpisodeType = ValidEpisodeType.full,    // <itunes:episodeType>
+    keywords             : immutable.Seq[String] = immutable.Seq.empty, // <itunes:keywords>
+    block                : Boolean          = false,                    // <itunes:block>Yes</itunes:block>
   )
   object EpisodeRenderer:
     class Default extends EpisodeRenderer:
@@ -47,16 +49,18 @@ case class Podcast(
   mainUrl            : String,
   title              : String,
   guidPrefix         : String,
+  mediaFilePrefix    : String,
   description        : String,
   editorEmail        : String,                                               // managingEditor
-  imagePath          : String,                                               // relative to mainUrl or full URL
-  language           : Option[LanguageCode]     = None,
-  admin              : Option[Admin]            = None,                      // <itunes:owner> and <webmaster>
+  imagePath          : String,                                               // relative to mainUrl or full URL, for both image and itunes:image
+  itunesCategories   : immutable.Seq[Itunes.Category] = immutable.Seq.empty,
+  language           : Option[LanguageCode]           = None,
+  admin              : Option[Admin]                  = None,                      // <itunes:owner> and <webmaster>
   defaultAuthorEmail : Option[String],
-  publisherEmail     : Option[String]           = None,                      // <itunes:author>
-  copyrightHolder    : Option[String]           = None,
-  shortTitle         : Option[String]           = None,                      // <itunes:title>
-  podcastType        : ValidPodcastType         = ValidPodcastType.episodic, // <itunes:type>
+  publisherEmail     : Option[String]                 = None,                      // <itunes:author>
+  copyrightHolder    : Option[String]                 = None,
+  shortTitle         : Option[String]                 = None,                      // <itunes:title>
+  podcastType        : ValidPodcastType               = ValidPodcastType.episodic, // <itunes:type>
   explicit           : Boolean = false,                                      // <itunes:explicit>
   episodes           : immutable.Seq[Episode]
 ):
