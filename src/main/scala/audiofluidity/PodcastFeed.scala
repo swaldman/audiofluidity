@@ -32,8 +32,12 @@ object PodcastFeed:
     case class  NewFeedUrl(location : String)
     case class  Owner(name : Itunes.Name, email : Itunes.Email)
     case class  Season(number : Int)
+    case class  Summary(text : String)
     case class  Title(title : String)
     case class  Type(validType : Itunes.ValidPodcastType)
+
+  object Content:
+    case class Encoded(text : String)
 
   private def item(podcast : Podcast, episode : Podcast.Episode) =
     import RssFeed.*
@@ -56,7 +60,7 @@ object PodcastFeed:
       categories = immutable.Seq.empty,
       comments = None,
       enclosure = Some(Enclosure(url=destinationAudioFileUrl,length=sourceAudioFileLength,`type`=sourceAudioFileMimeType)),
-      guid = Some(Guid(guid)),
+      guid = Some(Guid(false, guid)),
       pubDate = Some(PubDate(Instant.now)),
       source = None
     )

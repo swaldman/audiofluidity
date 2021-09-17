@@ -1,11 +1,9 @@
 package audiofluidity
 
-import scala.xml.{Elem,MetaData,Node,Null,PCData,Text,TopScope,UnprefixedAttribute}
-
+import scala.xml.{Elem, MetaData, Node, Null, PCData, Text, TopScope, UnprefixedAttribute}
 import java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
-
 import RssFeed.*
-import PodcastFeed.Itunes
+import PodcastFeed.{Content, Itunes}
 
 object Xmlable:
   private def elem(label : String, attributes1 : MetaData, children : Node*) : Elem =
@@ -61,7 +59,7 @@ object Xmlable:
   given Xmlable[Generator] with
     extension(x : Generator) def toElem : Elem = elem("generator", new Text(x.description))
   given Xmlable[Guid] with
-    extension(x : Guid) def toElem : Elem = elem("guid", new Text(x.contents))
+    extension(x : Guid) def toElem : Elem = elem("guid", new UnprefixedAttribute("isPermalink", x.isPermalink.toString, Null), new Text(x.id))
   given Xmlable[Hour] with
     extension(x : Hour) def toElem : Elem = elem("hour", new Text(x.hour.toString))
   given Xmlable[Height] with
@@ -158,6 +156,10 @@ object Xmlable:
     extension(x : Itunes.Title) def toElem : Elem = ielem("title", new Text(x.title))
   given Xmlable[Itunes.Type] with
     extension(x : Itunes.Type) def toElem : Elem = ielem("type", new Text(x.validType.toString))
+
+  // RDF content elements
+  given Xmlable[Content.Encoded] with
+    extension(x : Content.Encoded ) def toElem : Elem = new Elem(prefix="content", label="encoded", attributes1=Null, scope=TopScope, minimizeEmpty=true, new PCData(x.text))
 
 trait Xmlable[T]:
   extension(x : T) def toElem : Elem

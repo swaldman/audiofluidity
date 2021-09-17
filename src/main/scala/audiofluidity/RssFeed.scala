@@ -41,7 +41,7 @@ object RssFeed:
   case class Docs(url : String = "https://cyber.harvard.edu/rss/rss.html")
   case class Enclosure(url : String, length : Long, `type` : String)
   case class Generator(description : String)
-  case class Guid(contents : String)
+  case class Guid(isPermalink : Boolean, id : String)
   case class Hour(hour : Int) // shuld be 1 to 24
   case class Height(pixels : Int)
   case class Image(url : Url, title : Title, link : Link, width : Option[Width], height : Option[Height], description : Option[Description])
