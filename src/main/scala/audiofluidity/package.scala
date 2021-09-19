@@ -5,8 +5,11 @@ import scala.xml.*
 
 import java.io.File
 
-import java.time.Instant
+import java.time.{Instant,ZonedDateTime,ZoneId}
+import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
+
+import java.util.Locale
 
 class AudiofluidityException(message : String, cause : Throwable = null) extends Exception(message, cause)
 class NoExtensionForMediaFile(message : String, cause : Throwable = null) extends AudiofluidityException(message, cause)
@@ -24,9 +27,11 @@ val SupportedImageFileExtensions = immutable.Map(
   "png" -> "image/png"
 )
 
-private def formatDateTime(i : Instant) : String = RFC_1123_DATE_TIME.format(i)
+private val AnnoyingDateTimeFormatter = RFC_1123_DATE_TIME.withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault())
 
-private def parseDateTime(s : String) : Instant = Instant.from(RFC_1123_DATE_TIME.parse(s))
+private def formatDateTime(i : Instant) : String = AnnoyingDateTimeFormatter.format(i)
+
+private def parseDateTime(s : String) : Instant = ZonedDateTime.parse(s, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant //Instant.from(AnnoyingDateTimeFormatter.parse(s))
 
 // see...
 //    https://github.com/mpatric/mp3agic

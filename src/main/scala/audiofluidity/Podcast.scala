@@ -7,11 +7,12 @@ import Element.Itunes.{ValidEpisodeType, ValidPodcastType}
 object Podcast:
   case class Admin( name : String, email : String)
   case class Source(
-    baseDir          : String = "",        // path to dir, empty String means current working directory
-    srcDirName       : String = "src",     // relative to baseDir
-    srcStaticDirName : String = "docroot", // relative to srcDir
-    srcAudioDirName  : String = "audio",   // relative to srcDir
-    srcImageDirName  : String = "image",   // relative to srcDir 
+    baseDir          : String = "",            // path to dir, empty String means current working directory
+    srcDirName       : String = "src",         // relative to baseDir
+    srcStaticDirName : String = "docroot",     // relative to srcDir, static resources
+    srcAudioDirName  : String = "audio",       // relative to srcDir
+    srcEpisodeRoot   : String = "episoderoot", // relative to srcDir, place folders of static resources named by episode UID
+    srcImageDirName  : String = "image",       // relative to srcDir 
   ):
     val srcDir       = pathcat(baseDir,srcDirName)
     val srcStaticDir = pathcat(srcDir,srcStaticDirName)
@@ -39,7 +40,7 @@ object Podcast:
     mbShortTitle          : Option[String]        = None,                  // <itunes:title>
     mbSourceImageFileName : Option[String]        = None,                  // <itunes:image>
     mbSubtitle            : Option[String]        = None,                  // <itunes:subtitle>
-    mbSummary             : Option[String]                                 // <itunes:summary>
+    mbSummary             : Option[String]        = None                   // <itunes:summary>
   )
   object EpisodeRenderer:
     class Default extends EpisodeRenderer:
@@ -56,8 +57,8 @@ object Podcast:
 import Podcast.*
 
 case class Podcast(
-  source               : Source,
-  format               : Format,                
+  source               : Source = new Source(),
+  format               : Format = new Format(),                
   mainUrl              : String,
   title                : String,
   guidPrefix           : String,

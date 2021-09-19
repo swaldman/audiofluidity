@@ -1,18 +1,18 @@
 package audiofluidity
 
-import java.io.File
+import java.io.{StringWriter,File}
 import java.time.{Instant,ZonedDateTime}
 import scala.collection.*
-import scala.xml.{Elem,NamespaceBinding,Node,TopScope}
+import scala.xml.{Elem,NamespaceBinding,Node,PrettyPrinter,TopScope,XML}
 
 import Element.*
 import Xmlable.given
 
 object PodcastFeed:
-  val RdfContentModuleNamespaceBinding = new NamespaceBinding("content","http://purl.org/rss/1.0/modules/content/", TopScope)
-  val AppleNamespaceBinding = new NamespaceBinding("itunes","http://www.itunes.com/dtds/podcast-1.0.dtd", RdfContentModuleNamespaceBinding)
+  private val RdfContentModuleNamespaceBinding = new NamespaceBinding("content","http://purl.org/rss/1.0/modules/content/", TopScope)
+  private val AppleNamespaceBinding = new NamespaceBinding("itunes","http://www.itunes.com/dtds/podcast-1.0.dtd", RdfContentModuleNamespaceBinding)
 
-  private def item(podcast : Podcast, episode : Podcast.Episode) : (Item, Decoration.Item) =
+  private def item(podcast : Podcast, episode : Podcast.Episode, examineMedia : Boolean) : (Item, Decoration.Item) =
     val guid = _guid(podcast, episode)
     val author = episode.mbAuthorEmail.getOrElse(podcast.defaultAuthorEmail)
     val pubDateInstant = parseDateTime(episode.pubDate)
@@ -21,11 +21,11 @@ object PodcastFeed:
     val audioExtension = mediaFileExtension(episode.sourceAudioFileName)
     val sourceAudioFileMimeType = mimeTypeForSupportedAudioFileExtension(audioExtension)
     val sourceAudioFile = new File(pathcat(podcast.source.srcAudioDir,episode.sourceAudioFileName))
-    if !sourceAudioFile.exists then throw new SourceMediaFileNotFound(s"Audio file '${sourceAudioFile}' not found.")
-    val sourceAudioFileLength = sourceAudioFile.length()
+    if examineMedia && !sourceAudioFile.exists then throw new SourceMediaFileNotFound(s"Audio file '${sourceAudioFile}' not found.")
+    val sourceAudioFileLength = if examineMedia then sourceAudioFile.length() else 0
     val destinationAudioFileUrl = pathcat(podcast.mainUrl,podcast.format.episodesPath,destAudioFileName(podcast, episode, audioExtension))
     val mbDurationInSeconds =
-      if audioExtension == "mp3" then Some( mp3FileDurationInSeconds( sourceAudioFile ) ) else None
+      if examineMedia && audioExtension == "mp3" then Some( mp3FileDurationInSeconds( sourceAudioFile ) ) else None
 
     val itemOut = Item(
       title       = Title(episode.title),
@@ -62,7 +62,7 @@ object PodcastFeed:
         val imageExtension = mediaFileExtension( sourceImageFileName )
         ensureSupportedImageExtension(imageExtension)
         val sourceImageFile = new File(pathcat(podcast.source.srcImageDir,sourceImageFileName))
-        if !sourceImageFile.exists then throw new SourceMediaFileNotFound(s"Image file '${sourceImageFile}' not found.")
+        if examineMedia && !sourceImageFile.exists then throw new SourceMediaFileNotFound(s"Image file '${sourceImageFile}' not found.")
         val destinationImageFileUrl = pathcat(podcast.mainUrl,podcast.format.episodesPath,destImageFileName(podcast, episode, imageExtension))
         Itunes.Image(destinationImageFileUrl)  
       }
@@ -86,7 +86,7 @@ object PodcastFeed:
       
   end item
 
-  private def channel(podcast : Podcast, items : immutable.Seq[Item] ) : (Channel, Decoration.Channel) =
+  private def channel(podcast : Podcast, items : immutable.Seq[Item]) : (Channel, Decoration.Channel) =
     val zdtNow = ZonedDateTime.now()
     val title = Title(podcast.title)
     val link  = Link(podcast.mainUrl)
@@ -96,6 +96,7 @@ object PodcastFeed:
       title       = title,
       link        = link,
       description = description,
+      pubDate     = Some(PubDate(Instant.now())),
       image       = Some(Image(url=Url(imageUrl), title=title, link=link, description=Some(description), width=None, height=None)),
       language    = podcast.mbLanguage.map(lc => Language(lc)),
       copyright   = podcast.mbCopyrightHolder.map(holder => Copyright(notice=s"\u00A9${zdtNow.getYear} ${holder}")),
@@ -122,8 +123,8 @@ object PodcastFeed:
 
   end channel  
 
-  def apply(podcast : Podcast) : PodcastFeed =
-    val itemItemDs = podcast.episodes.map(e => item(podcast, e) )
+  def apply(podcast : Podcast, examineMedia : Boolean = true) : PodcastFeed =
+    val itemItemDs = podcast.episodes.map(e => item(podcast, e, examineMedia) )
     val items = itemItemDs.map( _._1 )
     val (channelIn, channelD) = channel(podcast, items)
     val itemDsMap = itemItemDs.map { case (item, itemD) => (item.guid.get.id, itemD)}.toMap // we always create <guid> elements, so get should always succeed
@@ -131,9 +132,38 @@ object PodcastFeed:
 
 end PodcastFeed // object
 
-case class PodcastFeed(channel : Channel, channelD : Decoration.Channel, itemDs : immutable.Map[String,Decoration.Item]):
-  // private def decorateRssElem(podcast : Podcast, decoratedChannelElem : Elem, rssFeedXml : Elem) : Elem =
-    // rssFeedXml.copy(scope=AppleNamespaceBinding, child=decoratedChannelElem)
+case class PodcastFeed private(channelIn : Channel, channelD : Decoration.Channel, itemDs : immutable.Map[String,Decoration.Item]):
 
-  lazy val asXmlText = ???  
+  private def itemGuid( itemElem : Elem ) : String = uniqueChildElem(itemElem, "guid").text
+
+  private def decorateItem( itemElem : Elem ) : Elem =
+    val guid  = itemGuid( itemElem )
+    val itemD = itemDs( guid )
+    itemD.decorate( itemElem )
+
+  lazy val undecoratedRss = Rss(channel=channelIn)
+
+  lazy val decoratedRssElem : Elem =
+    val undecoratedRssElem = undecoratedRss.toElem.copy(scope=PodcastFeed.AppleNamespaceBinding)
+    val undecoratedChannelElem = uniqueChildElem(undecoratedRssElem, "channel")
+    val oldItems = undecoratedChannelElem.child.collect { case e : Elem if e.prefix == null && e.label == "item" => e }
+    val nonItems = undecoratedChannelElem.child.filter( n => !oldItems.contains(n) )
+    val undecoratedNoItemChannelElem = undecoratedChannelElem.copy( child = nonItems )
+    val decoratedNoItemChannelElem = channelD.decorate( undecoratedNoItemChannelElem )
+    val decoratedChannelElem = decoratedNoItemChannelElem.copy( child = decoratedNoItemChannelElem.child ++ oldItems.map( decorateItem ) )
+    undecoratedRssElem.copy( child = decoratedChannelElem :: Nil )
+
+  lazy val asXmlText =
+    // to autogenerate the XML declaration, but no pretty print...
+    // thanks https://stackoverflow.com/questions/8965025/how-do-you-add-xml-document-info-with-scala-xml
+    //val sw = new StringWriter()
+    //XML.write(sw,decoratedRssElem,"UTF-8",true,null) 
+    //sw.toString
+    val pp = new PrettyPrinter(80,2)
+    val noXmlDeclarationPretty = pp.format(decoratedRssElem)
+    s"<?xml version='1.0' encoding='UTF-8'?>\n\n${noXmlDeclarationPretty}"
+
+
+
+
 end PodcastFeed
