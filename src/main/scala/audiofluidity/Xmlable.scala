@@ -1,9 +1,8 @@
 package audiofluidity
 
 import scala.xml.{Elem, MetaData, Node, Null, PCData, Text, TopScope, UnprefixedAttribute}
-import java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
-import RssFeed.*
-import PodcastFeed.{Content, Itunes}
+import Element.*
+import Element.{Content, Itunes}
 
 object Xmlable:
   private def elem(label : String, attributes1 : MetaData, children : Node*) : Elem =
@@ -79,7 +78,7 @@ object Xmlable:
     extension(x : Language) def toElem : Elem = elem("language", new Text(x.code.rendered))
   given Xmlable[LastBuildDate] with
     extension(x : LastBuildDate) def toElem : Elem =
-      val dateStr = RFC_1123_DATE_TIME.format(x.date)
+      val dateStr = formatDateTime(x.date)
       elem("lastBuildDate", new Text(dateStr))
   given Xmlable[Link] with
     extension(x : Link) def toElem : Elem = elem("link", new Text(x.location))
@@ -89,13 +88,13 @@ object Xmlable:
     extension(x : Name) def toElem : Elem = elem("name", new Text(x.text))
   given Xmlable[PubDate] with
     extension(x : PubDate) def toElem : Elem =
-      val dateStr = RFC_1123_DATE_TIME.format(x.date)
+      val dateStr = formatDateTime(x.date)
       elem("pubDate", new Text(dateStr))
   given Xmlable[Rating] with
     extension(x : Rating) def toElem : Elem = elem("rating", new Text(x.contents))
-  given Xmlable[RssFeed] with
-    extension(x : RssFeed) def toElem : Elem =
-      elem("rss", new UnprefixedAttribute("version", Version, Null), x.channel.toElem)
+  given Xmlable[Rss] with
+    extension(x : Rss) def toElem : Elem =
+      elem("rss", new UnprefixedAttribute("version", RssVersion, Null), x.channel.toElem)
   given Xmlable[SkipDays] with
     extension(x : SkipDays) def toElem : Elem = elem("skipDays", x.days.map( _.toElem ) : _*)
   given Xmlable[SkipHours] with
@@ -152,6 +151,10 @@ object Xmlable:
     extension(x : Itunes.Owner) def toElem : Elem = ielem("owner", x.name.toElem, x.email.toElem)
   given Xmlable[Itunes.Season] with
     extension(x : Itunes.Season) def toElem : Elem = ielem("season", new Text(x.number.toString))
+  given Xmlable[Itunes.Subtitle] with
+    extension(x : Itunes.Subtitle) def toElem : Elem = ielem("subtitle", new Text(x.text))
+  given Xmlable[Itunes.Summary] with
+    extension(x : Itunes.Summary) def toElem : Elem = ielem("summary", new Text(x.text))
   given given_Xmlable_Itunes_Title : Xmlable[Itunes.Title] with
     extension(x : Itunes.Title) def toElem : Elem = ielem("title", new Text(x.title))
   given Xmlable[Itunes.Type] with
