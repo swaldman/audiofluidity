@@ -1,10 +1,9 @@
 package audiofluidity
 
-import java.io.{StringWriter,File}
-import java.time.{Instant,ZonedDateTime}
+import java.io.{ByteArrayOutputStream, File, StringWriter, OutputStreamWriter}
+import java.time.{Instant, ZonedDateTime}
 import scala.collection.*
-import scala.xml.{Elem,NamespaceBinding,Node,PrettyPrinter,TopScope,XML}
-
+import scala.xml.{Elem, NamespaceBinding, Node, PrettyPrinter, TopScope, XML}
 import Element.*
 import Xmlable.given
 
@@ -13,30 +12,31 @@ object PodcastFeed:
   private val AppleNamespaceBinding = new NamespaceBinding("itunes","http://www.itunes.com/dtds/podcast-1.0.dtd", RdfContentModuleNamespaceBinding)
 
   private def item(podcast : Podcast, episode : Podcast.Episode, examineMedia : Boolean) : (Item, Decoration.Item) =
-    val guid = _guid(podcast, episode)
-    val author = episode.mbAuthorEmail.getOrElse(podcast.defaultAuthorEmail)
-    val pubDateInstant = parseDateTime(episode.pubDate)
+    val guid       = _guid(podcast, episode)
+    val author     = episode.mbAuthorEmail.getOrElse(podcast.defaultAuthorEmail)
+    val zoneId     = episode.mbZoneId.getOrElse( podcast.zoneId )
+    val pubDateZdt = zonedDateTime( episode.publicationDate, episode.publicationTime, zoneId )
 
     // enclosure info...
-    val audioExtension = mediaFileExtension(episode.sourceAudioFileName)
+    val audioExtension = audioFileExtension(episode)
     val sourceAudioFileMimeType = mimeTypeForSupportedAudioFileExtension(audioExtension)
-    val sourceAudioFile = new File(pathcat(podcast.source.srcAudioDir,episode.sourceAudioFileName))
+    val sourceAudioFile = podcast.build.srcEpisodeAudioFilePath(podcast, episode).toFile
     if examineMedia && !sourceAudioFile.exists then throw new SourceMediaFileNotFound(s"Audio file '${sourceAudioFile}' not found.")
     val sourceAudioFileLength = if examineMedia then sourceAudioFile.length() else 0
-    val destinationAudioFileUrl = pathcat(podcast.mainUrl,podcast.format.episodesPath,destAudioFileName(podcast, episode, audioExtension))
+    val destinationAudioFileUrl = podcast.layout.episodeAudioUrl(podcast, episode)
     val mbDurationInSeconds =
       if examineMedia && audioExtension == "mp3" then Some( mp3FileDurationInSeconds( sourceAudioFile ) ) else None
 
     val itemOut = Item(
       title       = Title(episode.title),
-      link        = Link(pathcat(podcast.mainUrl, podcast.format.episodesPath, s"${episode.uid}.html")),
+      link        = Link(podcast.layout.episodeUrl(podcast,episode)),
       description = Description(episode.description),
       author      = Author(author),
       categories  = immutable.Seq.empty,
       comments    = None,
       enclosure   = Some(Enclosure(url=destinationAudioFileUrl,length=sourceAudioFileLength,`type`=sourceAudioFileMimeType)),
       guid        = Some(Guid(false, guid)),
-      pubDate     = Some(PubDate(pubDateInstant)),
+      pubDate     = Some(PubDate(pubDateZdt)),
       source      = None
     )
 
@@ -58,13 +58,14 @@ object PodcastFeed:
     val mbItunesBlock    = if episode.block then Some(Itunes.Block) else None
 
     val mbItunesImage =
-      episode.mbSourceImageFileName.map { sourceImageFileName =>
+      episode.mbSourceImageFileName.flatMap { sourceImageFileName =>
         val imageExtension = mediaFileExtension( sourceImageFileName )
         ensureSupportedImageExtension(imageExtension)
-        val sourceImageFile = new File(pathcat(podcast.source.srcImageDir,sourceImageFileName))
-        if examineMedia && !sourceImageFile.exists then throw new SourceMediaFileNotFound(s"Image file '${sourceImageFile}' not found.")
-        val destinationImageFileUrl = pathcat(podcast.mainUrl,podcast.format.episodesPath,destImageFileName(podcast, episode, imageExtension))
-        Itunes.Image(destinationImageFileUrl)  
+        podcast.build.mbSrcEpisodeImageFilePath(podcast, episode).flatMap { sourceImageFilePath =>
+          val sourceImageFile = sourceImageFilePath.toFile
+          if examineMedia && !sourceImageFile.exists then throw new SourceMediaFileNotFound(s"Image file '${sourceImageFile}' not found.")
+          podcast.layout.mbEpisodeImageUrl(podcast, episode).map( episodeImageUrl => Itunes.Image(episodeImageUrl) )
+        }
       }
 
     val itemD = Decoration.Item(
@@ -87,16 +88,16 @@ object PodcastFeed:
   end item
 
   private def channel(podcast : Podcast, items : immutable.Seq[Item]) : (Channel, Decoration.Channel) =
-    val zdtNow = ZonedDateTime.now()
+    val zdtNow = ZonedDateTime.now(podcast.zoneId)
     val title = Title(podcast.title)
     val link  = Link(podcast.mainUrl)
     val description = Description(podcast.description)
-    val imageUrl = pathcat(podcast.mainUrl,podcast.mainImagePath)
+    val imageUrl = podcast.layout.mainImageUrl(podcast)
     val channelOut = Channel(
       title       = title,
       link        = link,
       description = description,
-      pubDate     = Some(PubDate(Instant.now())),
+      pubDate     = Some(PubDate(zdtNow)),
       image       = Some(Image(url=Url(imageUrl), title=title, link=link, description=Some(description), width=None, height=None)),
       language    = podcast.mbLanguage.map(lc => Language(lc)),
       copyright   = podcast.mbCopyrightHolder.map(holder => Copyright(notice=s"\u00A9${zdtNow.getYear} ${holder}")),
@@ -163,7 +164,13 @@ case class PodcastFeed private(channelIn : Channel, channelD : Decoration.Channe
     val noXmlDeclarationPretty = pp.format(decoratedRssElem)
     s"<?xml version='1.0' encoding='UTF-8'?>\n\n${noXmlDeclarationPretty}"
 
-
-
+  lazy val bytes : immutable.Seq[Byte] =
+    val baos = new ByteArrayOutputStream()
+    val osw = new OutputStreamWriter( baos, scala.io.Codec.UTF8.charSet )
+    try
+      osw.write(asXmlText)
+    finally
+      osw.close()
+    immutable.ArraySeq.ofByte(baos.toByteArray)
 
 end PodcastFeed

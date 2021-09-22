@@ -1,6 +1,6 @@
 package audiofluidity
 
-import java.time.Instant
+import java.time.ZonedDateTime
 import scala.collection.*
 
 object Element:
@@ -59,11 +59,11 @@ object Element:
         source      : Option[Source]
     )
     case class Language(code : LanguageCode)
-    case class LastBuildDate(date : Instant)
+    case class LastBuildDate(date : ZonedDateTime)
     case class Link(location : String)
     case class ManagingEditor(email : String)
     case class Name(text : String)
-    case class PubDate(date : Instant)
+    case class PubDate(date : ZonedDateTime)
     case class Rating(contents : String) // this seems widely unutilized, not sure what the contents might look like exactly
     case class Rss( version : String = RssVersion, channel : Channel )
     case class SkipDays(days : immutable.Seq[Day])

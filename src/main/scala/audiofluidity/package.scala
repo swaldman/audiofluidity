@@ -2,13 +2,11 @@ package audiofluidity
 
 import scala.collection.*
 import scala.xml.*
-
 import java.io.File
-
-import java.time.{Instant,ZonedDateTime,ZoneId}
+import java.nio.file.{Files, Path, SimpleFileVisitor}
+import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
-
 import java.util.Locale
 
 class AudiofluidityException(message : String, cause : Throwable = null) extends Exception(message, cause)
@@ -27,11 +25,19 @@ val SupportedImageFileExtensions = immutable.Map(
   "png" -> "image/png"
 )
 
-private val AnnoyingDateTimeFormatter = RFC_1123_DATE_TIME.withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault())
+val RssDateTimeFormatter = RFC_1123_DATE_TIME
 
-private def formatDateTime(i : Instant) : String = AnnoyingDateTimeFormatter.format(i)
+// private val AnnoyingDateTimeFormatter = RFC_1123_DATE_TIME.withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault())
 
-private def parseDateTime(s : String) : Instant = ZonedDateTime.parse(s, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant //Instant.from(AnnoyingDateTimeFormatter.parse(s))
+// private def formatDateTime(i : Instant) : String = AnnoyingDateTimeFormatter.format(i)
+
+// private def parseDateTime(s : String) : ZonedDateTime = ZonedDateTime.parse(s, DateTimeFormatter.RFC_1123_DATE_TIME)
+
+private def zonedDateTime( dateString : String, timeString : String, zoneId : ZoneId ) : ZonedDateTime =
+  val ld  = LocalDate.parse( dateString )
+  val lt  = LocalTime.parse( timeString )
+  val ldt = LocalDateTime.of( ld, lt )
+  ZonedDateTime.of( ldt, zoneId )
 
 // see...
 //    https://github.com/mpatric/mp3agic
@@ -48,18 +54,24 @@ private def mp3FileDurationInSeconds( f : File ) : Long =
 private def uniqueChildElem(node : Node, elemName : String) : Elem =
   (node \ elemName).collect{ case e : Elem => e }.ensuring(_.length == 1, s"Expected unique child '${elemName}' of Node, found multiple or nonr.").head
 
-private def _guid(podcast : Podcast, episode : Podcast.Episode) : String = s"${podcast.guidPrefix}/${episode.uid}"
+private def _guid(podcast : Podcast, episode : Podcast.Episode) : String = s"${podcast.guidPrefix}${episode.uid}"
 
-private def destAudioFileName(podcast : Podcast, episode : Podcast.Episode, extension : String) : String =
-  s"${podcast.audioFilePrefix}${episode.uid}.${extension}"
-  
-private def destImageFileName(podcast : Podcast, episode : Podcast.Episode, extension : String) : String =
-  s"${podcast.imageFilePrefix}${episode.uid}.${extension}"
-  
 private def mediaFileExtension(filename : String) : String =
   val preindex = filename.lastIndexOf('.')
   if preindex <= 0 || preindex >= (filename.length-1) then throw new NoExtensionForMediaFile(s"Referenced audio or image file '${filename}' lacks a required Extension")
   else filename.substring(preindex + 1)
+
+private def audioFileExtension(episode : Podcast.Episode) : String = mediaFileExtension(episode.sourceAudioFileName)
+
+private def episodeAudioSourceFilePath( podcast : Podcast, episode : Podcast.Episode ) : Path = podcast.build.srcAudioDir.resolve(episode.sourceAudioFileName)
+
+private def mbEpisodeImageFileExtension(episode : Podcast.Episode) : Option[String] = episode.mbSourceImageFileName.map(mediaFileExtension).map(ensureSupportedImageExtension)
+
+private def mbEpisodeImageSourceFilePath( podcast : Podcast, episode : Podcast.Episode) : Option[Path] =
+  episode.mbSourceImageFileName.map(sourceImageFileName => podcast.build.srcAudioDir.resolve(sourceImageFileName))
+
+private def mainImageFileExtension(podcast : Podcast) : String = ensureSupportedImageExtension( mediaFileExtension(podcast.mainImageFileName) )
+
 
 private def mimeTypeForSupportedAudioFileExtension(extension : String) : String =
   SupportedAudioFileExtensions.getOrElse (
@@ -67,11 +79,12 @@ private def mimeTypeForSupportedAudioFileExtension(extension : String) : String 
     throw UnsupportedMediaFileType(s"""Audio files with extension '${extension}' are not yet supported. Supported extensions: ${SupportedAudioFileExtensions.keySet.mkString(",")}""")
   )
 
-private def ensureSupportedImageExtension(extension : String) : Unit =
+private def ensureSupportedImageExtension(extension : String) : String =
   SupportedImageFileExtensions.getOrElse (
     extension,
     throw UnsupportedMediaFileType(s"""Image files with extension '${extension}' are not yet supported. Supported extensions: ${SupportedImageFileExtensions.keySet.mkString(",")}""")
   )
+  extension
 
 private def isStartOnlyPath( path : String ) : Boolean = path.indexOf(':') >= 0
 
@@ -86,4 +99,34 @@ private def pathcat(a : String, b : String) : String =
 
 private def pathcat(s : String*) : String =
   s.foldLeft("")((last,next)=>pathcat(last,next))
+
+/*
+private def generate(podcast : Podcast) : Unit =
+  val feedPath = Path.of(pathcat(podcast.build.showDir, podcast.format.feedPath))
+  val feedParent = feedPath.getParent()
+  Files.createDirectories(feedParent)
+
+private def generateEpisode( podcast: Podcast, episode : Podcast.Episode ) : Unit =
+  val guid = _guid(podcast, episode)
+
+private def recursiveCopyDirectory( srcRoot : Path, destRoot : Path ) =
+  val absSrcRoot = srcRoot.toAbsolutePath
+  val absDestRoot = destRoot.toAbsolutePath
+
+  def destDirPath( absSrcPath : Path ) =
+    val relPath = absSrcRoot.relativize(absSrcPath)
+    absDestRoot.resolve(relPath)
+
+  val visitor = new SimpleFileVisitor[Path]: // path will be absolute in sourceDir
+    def preVisitDirectory(dir : Path, attrs : BasicFileAttributes) : FileVisitResult =
+      Files.createDirectories(destDirPath(path))
+      FileVisitResult.CONTINUE
+
+    def visitFile(file : Path, attrs : BasicFileAttributes) : FileVisitResult =
+      Files.copy(file, desdtDirPath(file))
+      FileVisitResult.CONTINUE
+
+  File.walkFileTree(absSrcRoot, visitor)
+end recursiveCopyDirectory
+*/
 

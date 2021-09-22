@@ -1,5 +1,6 @@
 package audiofluidity
 
+import java.time.ZonedDateTime
 import scala.xml.{Elem, MetaData, Node, Null, PCData, Text, TopScope, UnprefixedAttribute}
 import Element.*
 import Element.{Content, Itunes}
@@ -78,7 +79,7 @@ object Xmlable:
     extension(x : Language) def toElem : Elem = elem("language", new Text(x.code.rendered))
   given Xmlable[LastBuildDate] with
     extension(x : LastBuildDate) def toElem : Elem =
-      val dateStr = formatDateTime(x.date)
+      val dateStr = x.date.format(RssDateTimeFormatter)
       elem("lastBuildDate", new Text(dateStr))
   given Xmlable[Link] with
     extension(x : Link) def toElem : Elem = elem("link", new Text(x.location))
@@ -88,7 +89,7 @@ object Xmlable:
     extension(x : Name) def toElem : Elem = elem("name", new Text(x.text))
   given Xmlable[PubDate] with
     extension(x : PubDate) def toElem : Elem =
-      val dateStr = formatDateTime(x.date)
+      val dateStr = x.date.format(RssDateTimeFormatter)
       elem("pubDate", new Text(dateStr))
   given Xmlable[Rating] with
     extension(x : Rating) def toElem : Elem = elem("rating", new Text(x.contents))
