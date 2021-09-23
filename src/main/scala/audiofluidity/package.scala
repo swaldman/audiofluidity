@@ -3,7 +3,8 @@ package audiofluidity
 import scala.collection.*
 import scala.xml.*
 import java.io.File
-import java.nio.file.{Files, Path, SimpleFileVisitor}
+import java.nio.file.{Files, FileVisitResult, Path, SimpleFileVisitor}
+import java.nio.file.attribute.BasicFileAttributes
 import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
@@ -100,14 +101,43 @@ private def pathcat(a : String, b : String) : String =
 private def pathcat(s : String*) : String =
   s.foldLeft("")((last,next)=>pathcat(last,next))
 
-/*
-private def generate(podcast : Podcast) : Unit =
-  val feedPath = Path.of(pathcat(podcast.build.showDir, podcast.format.feedPath))
+
+private def generate(podcast : Podcast, examineMedia : Boolean = false) : Unit =
+  val podcastFeed = PodcastFeed( podcast, examineMedia = examineMedia )
+  val feedPath = podcast.build.podcastgenDir.resolve(podcast.layout.rssFeedPath(podcast))
   val feedParent = feedPath.getParent()
   Files.createDirectories(feedParent)
+  Files.writeString(feedPath,podcastFeed.asXmlText, scala.io.Codec.UTF8.charSet)
+  val srcMainImageFilePath = podcast.build.srcMainImageFilePath(podcast)
+  val destMainImagePath = podcast.build.podcastgenDir.resolve(podcast.layout.mainImagePath(podcast))
+  Files.createDirectories(destMainImagePath.getParent)
+  podcast.episodes.foreach( episode => generateEpisode(podcast, episode) )
+  val srcStaticDirPath = podcast.build.srcStaticDir
+  val destStaticDirPath = podcast.build.podcastgenDir
+  if Files.exists(srcStaticDirPath) then recursiveCopyDirectory(srcStaticDirPath,destStaticDirPath)
+end generate
 
 private def generateEpisode( podcast: Podcast, episode : Podcast.Episode ) : Unit =
-  val guid = _guid(podcast, episode)
+  def root( path : Path ) = podcast.build.podcastgenDir.resolve(path)
+  val episodeRoot = root(podcast.layout.episodeRoot(podcast,episode))
+  Files.createDirectories(episodeRoot)
+  val srcEpisodeAudioPath = root(podcast.build.srcEpisodeAudioFilePath(podcast,episode))
+  val destEpisodeAudioPath = root(podcast.layout.episodeAudioPath(podcast,episode))
+  Files.createDirectories(destEpisodeAudioPath.getParent)
+  Files.copy(srcEpisodeAudioPath, destEpisodeAudioPath)
+  for
+    srcEpisodeImagePath  <- podcast.layout.mbEpisodeImagePath(podcast, episode).map(root)
+    destEpisodeImagePath <- podcast.build.mbSrcEpisodeImageFilePath(podcast,episode).map(root)
+  yield
+    Files.createDirectories(destEpisodeImagePath.getParent)
+    Files.copy(srcEpisodeImagePath,destEpisodeImagePath)
+  val episodeIndexHtmlPath = root(podcast.layout.episodeHtmlPath(podcast,episode))
+  val episodeRenderer = episode.mbEpisodeRenderer.getOrElse( podcast.defaultEpisodeRenderer )
+  val episodeIndexHtml = episodeRenderer.generateEpisodeHtml(podcast, episode)
+  Files.writeString(episodeIndexHtmlPath, episodeIndexHtml, scala.io.Codec.UTF8.charSet)
+  val srcEpisodeRootPath = podcast.build.srcEpisodeRootDirPath(podcast,episode)
+  if Files.exists(srcEpisodeRootPath) then recursiveCopyDirectory(srcEpisodeRootPath,episodeRoot)
+end generateEpisode
 
 private def recursiveCopyDirectory( srcRoot : Path, destRoot : Path ) =
   val absSrcRoot = srcRoot.toAbsolutePath
@@ -118,15 +148,15 @@ private def recursiveCopyDirectory( srcRoot : Path, destRoot : Path ) =
     absDestRoot.resolve(relPath)
 
   val visitor = new SimpleFileVisitor[Path]: // path will be absolute in sourceDir
-    def preVisitDirectory(dir : Path, attrs : BasicFileAttributes) : FileVisitResult =
-      Files.createDirectories(destDirPath(path))
+    override def preVisitDirectory(dir : Path, attrs : BasicFileAttributes) : FileVisitResult =
+      Files.createDirectories(destDirPath(dir))
       FileVisitResult.CONTINUE
 
-    def visitFile(file : Path, attrs : BasicFileAttributes) : FileVisitResult =
-      Files.copy(file, desdtDirPath(file))
+    override def visitFile(file : Path, attrs : BasicFileAttributes) : FileVisitResult =
+      Files.copy(file, destDirPath(file))
       FileVisitResult.CONTINUE
 
-  File.walkFileTree(absSrcRoot, visitor)
+  Files.walkFileTree(absSrcRoot, visitor)
 end recursiveCopyDirectory
-*/
+
 

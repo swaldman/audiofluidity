@@ -23,21 +23,23 @@ object Podcast:
     tmpDirName              : String = "tmp",         // relative to baseDir
     tmpConfigDirName        : String = "config",      // relative to tmpDir
     tmpConfigClassesDirName : String = "classes",     // relative to tmpConfigDir
-    showDirName             : String = "show",        // relative to baseDir
+    podcastgenDirName       : String = "podcastgen",        // relative to baseDir
   ):
     val configDir           = baseDir.resolve(configDirName)
     val configScalaDir      = configDir.resolve(configScalaDirName)
     val srcDir              = baseDir.resolve(srcDirName)
     val srcStaticDir        = srcDir.resolve(srcStaticDirName)
     val srcAudioDir         = srcDir.resolve(srcAudioDirName)
+    val srcEpisodeRootDir   = srcDir.resolve(srcEpisodeRootName)
     val srcImageDir         = srcDir.resolve(srcImageDirName)
     val tmpDir              = baseDir.resolve(tmpDirName)
     val tmpConfigDir        = tmpDir.resolve(tmpConfigDirName)
     val tmpConfigClassesDir = tmpConfigDir.resolve(tmpConfigClassesDirName)
-    val showDir             = baseDir.resolve(showDirName)
+    val podcastgenDir       = baseDir.resolve(podcastgenDirName)
 
     def srcMainImageFilePath(podcast : Podcast)                         : Path         = srcImageDir.resolve(podcast.mainImageFileName)
     def srcEpisodeAudioFilePath(podcast : Podcast, episode : Episode)   : Path         = srcAudioDir.resolve(episode.sourceAudioFileName)
+    def srcEpisodeRootDirPath(podcast : Podcast, episode : Episode)     : Path         = srcEpisodeRootDir.resolve(episode.uid)
     def mbSrcEpisodeImageFilePath(podcast : Podcast, episode : Episode) : Option[Path] = episode.mbSourceImageFileName.map( sifn => srcAudioDir.resolve(sifn) )
   end Build
   final case class Episode(
@@ -82,7 +84,7 @@ object Podcast:
         s"${podcast.shortOpaqueName}-audio-episode-${episode.uid}.${extension}"
       def destEpisodeImageFileName(podcast : Podcast, episode : Podcast.Episode, extension : String) : String =
         s"${podcast.shortOpaqueName}-coverart-episode-${episode.uid}.${extension}"
-      def mainHtmlPath(podcast : Podcast) : Path = Path.of(indexHtmlName)
+      // def mainHtmlPath(podcast : Podcast) : Path = Path.of(indexHtmlName)
       def mainImagePath(podcast : Podcast) : Path =
         val extension = mainImageFileExtension(podcast)
         Path.of(s"${podcast.shortOpaqueName}-coverart.${extension}")
@@ -105,7 +107,7 @@ object Podcast:
     def destEpisodeImageFileName(podcast : Podcast, episode : Podcast.Episode, extension : String) : String
 
     // paths below are all relative to podcast root
-    def mainHtmlPath(podcast : Podcast)                         : Path
+    // def mainHtmlPath(podcast : Podcast)                         : Path
     def mainImagePath(podcast : Podcast)                        : Path
     def rssFeedPath(podcast : Podcast)                          : Path
     def episodeRoot(podcast : Podcast, episode : Episode)       : Path
