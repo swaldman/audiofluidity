@@ -102,7 +102,7 @@ private def pathcat(s : String*) : String =
   s.foldLeft("")((last,next)=>pathcat(last,next))
 
 
-private def generate(podcast : Podcast, examineMedia : Boolean = false) : Unit =
+def generate(podcast : Podcast, examineMedia : Boolean = true) : Unit =
   val podcastFeed = PodcastFeed( podcast, examineMedia = examineMedia )
   val feedPath = podcast.build.podcastgenDir.resolve(podcast.layout.rssFeedPath(podcast))
   val feedParent = feedPath.getParent()
@@ -111,6 +111,7 @@ private def generate(podcast : Podcast, examineMedia : Boolean = false) : Unit =
   val srcMainImageFilePath = podcast.build.srcMainImageFilePath(podcast)
   val destMainImagePath = podcast.build.podcastgenDir.resolve(podcast.layout.mainImagePath(podcast))
   Files.createDirectories(destMainImagePath.getParent)
+  Files.copy(srcMainImageFilePath, destMainImagePath)
   podcast.episodes.foreach( episode => generateEpisode(podcast, episode) )
   val srcStaticDirPath = podcast.build.srcStaticDir
   val destStaticDirPath = podcast.build.podcastgenDir
