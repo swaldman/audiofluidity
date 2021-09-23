@@ -2,18 +2,24 @@ package audiofluidity
 
 import scala.collection.*
 import scala.xml.*
+import scala.jdk.StreamConverters.*
 import java.io.File
-import java.nio.file.{Files, FileVisitResult, Path, SimpleFileVisitor}
+import java.net.{URL, URLClassLoader}
+import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
 import java.util.Locale
 
+import dotty.tools.dotc
+
 class AudiofluidityException(message : String, cause : Throwable = null) extends Exception(message, cause)
+class ConfigCompilationErrors(message : String, cause : Throwable = null) extends AudiofluidityException(message, cause)
+class MissingScalaConfigDirectory(message : String, cause : Throwable = null) extends AudiofluidityException(message, cause)
 class NoExtensionForMediaFile(message : String, cause : Throwable = null) extends AudiofluidityException(message, cause)
-class UnsupportedMediaFileType(message : String, cause : Throwable = null) extends AudiofluidityException(message, cause)
 class SourceMediaFileNotFound(message : String, cause : Throwable = null) extends AudiofluidityException(message, cause)
+class UnsupportedMediaFileType(message : String, cause : Throwable = null) extends AudiofluidityException(message, cause)
 
 final case class Admin( name : String, email : String)
 
@@ -103,6 +109,37 @@ private def pathcat(a : String, b : String) : String =
 private def pathcat(s : String*) : String =
   s.foldLeft("")((last,next)=>pathcat(last,next))
 
+val DefaultConfigPath           = Path.of("config")
+val DefaultScalaDirNameInConfig = Path.of("scala")
+val DefaultTmpNameInConfig      = Path.of("tmp")
+val DefaultClassesNameInTmp     = Path.of("classes")
+
+// sun.java.command
+
+def compileConfig( fqcnPodcastSource : String, classPath : String, configPath : Path = DefaultConfigPath ) : PodcastSource =
+  val configScalaDir      = configPath.resolve( DefaultScalaDirNameInConfig )
+  val configTmpDir        = configPath.resolve( DefaultTmpNameInConfig )
+  val configTmpClassesDir = configTmpDir.resolve( DefaultClassesNameInTmp )
+  if !Files.exists(configScalaDir) then throw new MissingScalaConfigDirectory(s"Can't find scala config at '${configScalaDir}'")
+  Files.createDirectories(configTmpClassesDir)
+  val scalaFiles = Files.list(configScalaDir).toScala(List).map(_.toString).filter(_.endsWith(".scala"))
+  val args =  "-d" :: configTmpClassesDir.toString :: "-classpath" :: classPath :: scalaFiles
+
+  println(configScalaDir)
+  println(args.mkString(" "))
+
+  // see https://github.com/lampepfl/dotty/blob/master/compiler/src/dotty/tools/dotc/Driver.scala
+  val errors = (new dotc.Driver).process(args.toArray).hasErrors
+  if errors then throw new ConfigCompilationErrors("Errors occurred while attempting to compile the config")
+
+  // see https://stackoverflow.com/questions/738393/how-to-use-urlclassloader-to-load-a-class-file
+  val configTmpClassesFileUrl =
+    val s ="file:"+configTmpClassesDir.toAbsolutePath
+    if s.last == '/' then s else s + '/'
+
+  val classLoader = new URLClassLoader("audiofluidity-config",Array(URL(configTmpClassesFileUrl)), classOf[Podcast].getClassLoader())
+  classLoader.loadClass(fqcnPodcastSource).getDeclaredConstructor().newInstance().asInstanceOf[PodcastSource]
+end compileConfig
 
 def generate(podcast : Podcast, examineMedia : Boolean = true) : Unit =
   val podcastFeed = PodcastFeed( podcast, examineMedia = examineMedia )
