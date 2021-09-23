@@ -15,6 +15,8 @@ class NoExtensionForMediaFile(message : String, cause : Throwable = null) extend
 class UnsupportedMediaFileType(message : String, cause : Throwable = null) extends AudiofluidityException(message, cause)
 class SourceMediaFileNotFound(message : String, cause : Throwable = null) extends AudiofluidityException(message, cause)
 
+final case class Admin( name : String, email : String)
+
 val DefaultGenerator = "Audiofluidity Static Podcast Site Generator"
 
 val SupportedAudioFileExtensions = immutable.Map(
@@ -55,20 +57,20 @@ private def mp3FileDurationInSeconds( f : File ) : Long =
 private def uniqueChildElem(node : Node, elemName : String) : Elem =
   (node \ elemName).collect{ case e : Elem => e }.ensuring(_.length == 1, s"Expected unique child '${elemName}' of Node, found multiple or nonr.").head
 
-private def _guid(podcast : Podcast, episode : Podcast.Episode) : String = s"${podcast.guidPrefix}${episode.uid}"
+private def _guid(podcast : Podcast, episode : Episode) : String = s"${podcast.guidPrefix}${episode.uid}"
 
 private def mediaFileExtension(filename : String) : String =
   val preindex = filename.lastIndexOf('.')
   if preindex <= 0 || preindex >= (filename.length-1) then throw new NoExtensionForMediaFile(s"Referenced audio or image file '${filename}' lacks a required Extension")
   else filename.substring(preindex + 1)
 
-private def audioFileExtension(episode : Podcast.Episode) : String = mediaFileExtension(episode.sourceAudioFileName)
+private def audioFileExtension(episode : Episode) : String = mediaFileExtension(episode.sourceAudioFileName)
 
-private def episodeAudioSourceFilePath( podcast : Podcast, episode : Podcast.Episode ) : Path = podcast.build.srcAudioDir.resolve(episode.sourceAudioFileName)
+private def episodeAudioSourceFilePath( podcast : Podcast, episode : Episode ) : Path = podcast.build.srcAudioDir.resolve(episode.sourceAudioFileName)
 
-private def mbEpisodeImageFileExtension(episode : Podcast.Episode) : Option[String] = episode.mbSourceImageFileName.map(mediaFileExtension).map(ensureSupportedImageExtension)
+private def mbEpisodeImageFileExtension(episode : Episode) : Option[String] = episode.mbSourceImageFileName.map(mediaFileExtension).map(ensureSupportedImageExtension)
 
-private def mbEpisodeImageSourceFilePath( podcast : Podcast, episode : Podcast.Episode) : Option[Path] =
+private def mbEpisodeImageSourceFilePath( podcast : Podcast, episode : Episode) : Option[Path] =
   episode.mbSourceImageFileName.map(sourceImageFileName => podcast.build.srcAudioDir.resolve(sourceImageFileName))
 
 private def mainImageFileExtension(podcast : Podcast) : String = ensureSupportedImageExtension( mediaFileExtension(podcast.mainImageFileName) )
@@ -118,7 +120,7 @@ def generate(podcast : Podcast, examineMedia : Boolean = true) : Unit =
   if Files.exists(srcStaticDirPath) then recursiveCopyDirectory(srcStaticDirPath,destStaticDirPath)
 end generate
 
-private def generateEpisode( podcast: Podcast, episode : Podcast.Episode ) : Unit =
+private def generateEpisode( podcast: Podcast, episode : Episode ) : Unit =
   def root( path : Path ) = podcast.build.podcastgenDir.resolve(path)
   val episodeRoot = root(podcast.layout.episodeRoot(podcast,episode))
   Files.createDirectories(episodeRoot)

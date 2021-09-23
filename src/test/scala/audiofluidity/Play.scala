@@ -5,7 +5,7 @@ import scala.collection.*
 object Play:
 
   val TestEpisodes = immutable.Seq(
-    Podcast.Episode(
+    Episode(
       uid                 = "1",
       title               = "Hypothetically, a First Episode",
       description         = "<p>If this were not just a test, it would be a first episode</p>",

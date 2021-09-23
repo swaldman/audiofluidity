@@ -11,7 +11,7 @@ object PodcastFeed:
   private val RdfContentModuleNamespaceBinding = new NamespaceBinding("content","http://purl.org/rss/1.0/modules/content/", TopScope)
   private val AppleNamespaceBinding = new NamespaceBinding("itunes","http://www.itunes.com/dtds/podcast-1.0.dtd", RdfContentModuleNamespaceBinding)
 
-  private def item(podcast : Podcast, episode : Podcast.Episode, examineMedia : Boolean) : (Item, Decoration.Item) =
+  private def item(podcast : Podcast, episode : Episode, examineMedia : Boolean) : (Item, Decoration.Item) =
     val guid       = _guid(podcast, episode)
     val author     = episode.mbAuthorEmail.getOrElse(podcast.defaultAuthorEmail)
     val zoneId     = episode.mbZoneId.getOrElse( podcast.zoneId )
@@ -114,7 +114,7 @@ object PodcastFeed:
       mbItunesComplete   = if podcast.complete then Some(Itunes.Complete) else None,
       mbItunesKeywords   = if (podcast.keywords.nonEmpty) Some(Itunes.Keywords(podcast.keywords)) else None,
       mbItunesNewFeedUrl = podcast.mbNewFeedUrl.map(url => Itunes.NewFeedUrl(url)),
-      mbItunesOwner      = podcast.mbAdmin.map { case Podcast.Admin(name, email) => Itunes.Owner(Itunes.Name(name),Itunes.Email(email)) },
+      mbItunesOwner      = podcast.mbAdmin.map { case Admin(name, email) => Itunes.Owner(Itunes.Name(name),Itunes.Email(email)) },
       mbItunesSubtitle   = podcast.mbSubtitle.map(st => Itunes.Subtitle(st)),
       mbItunesSummary    = podcast.mbSummary.map(s => Itunes.Summary(s)),
       mbItunesTitle      = podcast.mbShortTitle.map(t => Itunes.Title(t))    
