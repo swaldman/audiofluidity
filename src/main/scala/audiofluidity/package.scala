@@ -114,6 +114,8 @@ def generate(podcast : Podcast, examineMedia : Boolean = true) : Unit =
   val destMainImagePath = podcast.build.podcastgenDir.resolve(podcast.layout.mainImagePath(podcast))
   Files.createDirectories(destMainImagePath.getParent)
   Files.copy(srcMainImageFilePath, destMainImagePath)
+  val destMainHtmlPath = podcast.build.podcastgenDir.resolve(podcast.layout.mainHtmlPath(podcast))
+  Files.writeString(destMainHtmlPath,podcast.renderer.generateMainHtml(podcast), scala.io.Codec.UTF8.charSet)
   podcast.episodes.foreach( episode => generateEpisode(podcast, episode) )
   val srcStaticDirPath = podcast.build.srcStaticDir
   val destStaticDirPath = podcast.build.podcastgenDir
@@ -135,7 +137,7 @@ private def generateEpisode( podcast: Podcast, episode : Episode ) : Unit =
     Files.createDirectories(destEpisodeImagePath.getParent)
     Files.copy(srcEpisodeImagePath,destEpisodeImagePath)
   val episodeIndexHtmlPath = root(podcast.layout.episodeHtmlPath(podcast,episode))
-  val episodeRenderer = episode.mbEpisodeRenderer.getOrElse( podcast.defaultEpisodeRenderer )
+  val episodeRenderer = episode.mbOverrideRenderer.getOrElse( podcast.renderer )
   val episodeIndexHtml = episodeRenderer.generateEpisodeHtml(podcast, episode)
   Files.writeString(episodeIndexHtmlPath, episodeIndexHtml, scala.io.Codec.UTF8.charSet)
   val srcEpisodeRootPath = podcast.build.srcEpisodeRootDirPath(podcast,episode)

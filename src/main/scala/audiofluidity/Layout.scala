@@ -14,7 +14,7 @@ object Layout:
       s"${podcast.shortOpaqueName}-audio-episode-${episode.uid}.${extension}"
     def destEpisodeImageFileName(podcast : Podcast, episode : Episode, extension : String) : String =
       s"${podcast.shortOpaqueName}-coverart-episode-${episode.uid}.${extension}"
-    // def mainHtmlPath(podcast : Podcast) : Path = Path.of(indexHtmlName)
+    def mainHtmlPath(podcast : Podcast) : Path = Path.of(indexHtmlName)
     def mainImagePath(podcast : Podcast) : Path =
       val extension = mainImageFileExtension(podcast)
       Path.of(s"${podcast.shortOpaqueName}-coverart.${extension}")
@@ -37,7 +37,7 @@ trait Layout:
   def destEpisodeImageFileName(podcast : Podcast, episode : Episode, extension : String) : String
 
   // paths below are all relative to podcast root
-  // def mainHtmlPath(podcast : Podcast)                         : Path
+  def mainHtmlPath(podcast : Podcast)                         : Path
   def mainImagePath(podcast : Podcast)                        : Path
   def rssFeedPath(podcast : Podcast)                          : Path
   def episodeRoot(podcast : Podcast, episode : Episode)       : Path

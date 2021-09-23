@@ -19,7 +19,7 @@ final case class Podcast(
   mainImageFileName      : String,
   editorEmail            : String,                                                     // managingEditor
   defaultAuthorEmail     : String,
-  defaultEpisodeRenderer : Renderer                       = Renderer.Basic,
+  renderer               : Renderer                       = Renderer.Basic,
   itunesCategories       : immutable.Seq[Itunes.Category] = immutable.Seq.empty,
   zoneId                 : ZoneId                         = ZoneId.of("US/Pacific"),
   mbLanguage             : Option[LanguageCode]           = None,
