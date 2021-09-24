@@ -3,9 +3,9 @@ package audiofluidity
 import scala.collection.*
 import scala.xml.*
 import scala.jdk.StreamConverters.*
-import java.io.File
+import java.io.{File, IOException}
 import java.net.{URL, URLClassLoader}
-import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
+import java.nio.file.{FileVisitResult, Files, LinkOption, Path, SimpleFileVisitor, StandardCopyOption}
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
@@ -114,8 +114,6 @@ val DefaultScalaDirNameInConfig = Path.of("scala")
 val DefaultTmpNameInConfig      = Path.of("tmp")
 val DefaultClassesNameInTmp     = Path.of("classes")
 
-// sun.java.command
-
 def compileConfig( fqcnPodcastSource : String, classPath : String, configPath : Path = DefaultConfigPath ) : PodcastSource =
   val configScalaDir      = configPath.resolve( DefaultScalaDirNameInConfig )
   val configTmpDir        = configPath.resolve( DefaultTmpNameInConfig )
@@ -125,8 +123,8 @@ def compileConfig( fqcnPodcastSource : String, classPath : String, configPath : 
   val scalaFiles = Files.list(configScalaDir).toScala(List).map(_.toString).filter(_.endsWith(".scala"))
   val args =  "-d" :: configTmpClassesDir.toString :: "-classpath" :: classPath :: scalaFiles
 
-  println(configScalaDir)
-  println(args.mkString(" "))
+  // println(configScalaDir)
+  // println(args.mkString(" "))
 
   // see https://github.com/lampepfl/dotty/blob/master/compiler/src/dotty/tools/dotc/Driver.scala
   val errors = (new dotc.Driver).process(args.toArray).hasErrors
@@ -150,7 +148,7 @@ def generate(podcast : Podcast, examineMedia : Boolean = true) : Unit =
   val srcMainImageFilePath = podcast.build.srcMainImageFilePath(podcast)
   val destMainImagePath = podcast.build.podcastgenDir.resolve(podcast.layout.mainImagePath(podcast))
   Files.createDirectories(destMainImagePath.getParent)
-  Files.copy(srcMainImageFilePath, destMainImagePath)
+  Files.copy(srcMainImageFilePath, destMainImagePath, StandardCopyOption.REPLACE_EXISTING)
   val destMainHtmlPath = podcast.build.podcastgenDir.resolve(podcast.layout.mainHtmlPath(podcast))
   Files.writeString(destMainHtmlPath,podcast.renderer.generateMainHtml(podcast), scala.io.Codec.UTF8.charSet)
   podcast.episodes.foreach( episode => generateEpisode(podcast, episode) )
@@ -163,10 +161,10 @@ private def generateEpisode( podcast: Podcast, episode : Episode ) : Unit =
   def root( path : Path ) = podcast.build.podcastgenDir.resolve(path)
   val episodeRoot = root(podcast.layout.episodeRoot(podcast,episode))
   Files.createDirectories(episodeRoot)
-  val srcEpisodeAudioPath = root(podcast.build.srcEpisodeAudioFilePath(podcast,episode))
+  val srcEpisodeAudioPath = podcast.build.srcEpisodeAudioFilePath(podcast,episode)
   val destEpisodeAudioPath = root(podcast.layout.episodeAudioPath(podcast,episode))
   Files.createDirectories(destEpisodeAudioPath.getParent)
-  Files.copy(srcEpisodeAudioPath, destEpisodeAudioPath)
+  Files.copy(srcEpisodeAudioPath, destEpisodeAudioPath, StandardCopyOption.REPLACE_EXISTING)
   for
     srcEpisodeImagePath  <- podcast.layout.mbEpisodeImagePath(podcast, episode).map(root)
     destEpisodeImagePath <- podcast.build.mbSrcEpisodeImageFilePath(podcast,episode).map(root)
@@ -195,10 +193,34 @@ private def recursiveCopyDirectory( srcRoot : Path, destRoot : Path ) =
       FileVisitResult.CONTINUE
 
     override def visitFile(file : Path, attrs : BasicFileAttributes) : FileVisitResult =
-      Files.copy(file, destDirPath(file))
+      Files.copy(file, destDirPath(file), StandardCopyOption.REPLACE_EXISTING)
       FileVisitResult.CONTINUE
 
   Files.walkFileTree(absSrcRoot, visitor)
 end recursiveCopyDirectory
+
+private def recursiveDeleteDirectory( deleteDir : Path, leaveTop : Boolean = false ) : Unit =
+  if !Files.exists( deleteDir ) then return
+
+  require( Files.isDirectory(deleteDir), s"'${deleteDir}' is not a directory, recursiveDeleteDirectory can't delete!" )
+
+  // println(s"Deleting ${deleteDir.toAbsolutePath}")
+
+  def canonicalize(dirpath : Path) : Path = dirpath.toFile.getCanonicalFile.toPath
+
+  val canonicalDeleteDir = canonicalize(deleteDir)
+
+  val visitor = new SimpleFileVisitor[Path]: // path will be absolute in sourceDir
+    override def postVisitDirectory(dir : Path, exc : IOException) : FileVisitResult =
+      // println(s"${canonicalDeleteDir} =?= ${canonicalize(dir)}")
+      if (!leaveTop || canonicalize(dir) != canonicalDeleteDir) Files.delete(dir)
+      FileVisitResult.CONTINUE
+
+    override def visitFile(file : Path, attrs : BasicFileAttributes) : FileVisitResult =
+      Files.delete(file)
+      FileVisitResult.CONTINUE
+
+  Files.walkFileTree(deleteDir, visitor)
+end recursiveDeleteDirectory
 
 
