@@ -120,15 +120,33 @@ def compileConfig( fqcnPodcastSource : String, classPath : String, configPath : 
   val configTmpClassesDir = configTmpDir.resolve( DefaultClassesNameInTmp )
   if !Files.exists(configScalaDir) then throw new MissingScalaConfigDirectory(s"Can't find scala config at '${configScalaDir}'")
   Files.createDirectories(configTmpClassesDir)
-  val scalaFiles = Files.list(configScalaDir).toScala(List).map(_.toString).filter(_.endsWith(".scala"))
-  val args =  "-d" :: configTmpClassesDir.toString :: "-classpath" :: classPath :: scalaFiles
+  val scalaFilePaths = Files.list(configScalaDir).toScala(List).filter(_.toString.endsWith(".scala"))
 
-  // println(configScalaDir)
-  // println(args.mkString(" "))
+  def classFilePath( scalaFilePath : Path) =
+    val scalaFilePathStr = scalaFilePath.toString
+    val suffixIndex = scalaFilePathStr.lastIndexOf('.')
+    val classFilePathStr = scalaFilePathStr.substring(0,suffixIndex) + ".class"
+    val classFilePath = Path.of(classFilePathStr)
+    configTmpClassesDir.resolve(configScalaDir.relativize(classFilePath))
 
-  // see https://github.com/lampepfl/dotty/blob/master/compiler/src/dotty/tools/dotc/Driver.scala
-  val errors = (new dotc.Driver).process(args.toArray).hasErrors
-  if errors then throw new ConfigCompilationErrors("Errors occurred while attempting to compile the config")
+  val pathTups = scalaFilePaths.map( p => Tuple2(p,classFilePath(p)) )
+
+  val changedTups = pathTups.filter {
+    case (src, clz) => !Files.exists(clz) || Files.getLastModifiedTime(src).toMillis > Files.getLastModifiedTime(clz).toMillis
+  }
+
+  val mustCompileFiles = changedTups.collect { case (src, _) => src.toString }
+
+  if mustCompileFiles.nonEmpty then
+    val args =  "-d" :: configTmpClassesDir.toString :: "-classpath" :: classPath :: mustCompileFiles
+
+    // println(configScalaDir)
+    // println(args.mkString(" "))
+
+    // see https://github.com/lampepfl/dotty/blob/master/compiler/src/dotty/tools/dotc/Driver.scala
+    val errors = (new dotc.Driver).process(args.toArray).hasErrors
+    if errors then throw new ConfigCompilationErrors("Errors occurred while attempting to compile the config")
+  end if
 
   // see https://stackoverflow.com/questions/738393/how-to-use-urlclassloader-to-load-a-class-file
   val configTmpClassesFileUrl =
