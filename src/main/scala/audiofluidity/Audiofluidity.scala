@@ -67,8 +67,9 @@ object Audiofluidity {
           recursiveDeleteDirectory(podcast.build.podcastgenDir, leaveTop = true)
         case "generate" =>
           val podcast = buildConfigPodcast()
+          INFO.log("Generating podcast website and RSS feed.")
           generate( podcast )
-          println(s"Successfully generated podcast '${podcast.title}''")
+          INFO.log(s"Successfully generated podcast '${podcast.title}'.")
         case _ => usage()
     else usage()
 

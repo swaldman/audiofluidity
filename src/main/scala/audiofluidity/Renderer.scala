@@ -16,8 +16,11 @@ object Renderer:
           |    <div class="contacts podcast">
           |       [<a href="${podcast.layout.rssFeedUrl(podcast)}">rss</a>]
           |    </div>
+          |    <div class="coverimage podcast">
+          |      <img src="${podcast.layout.mainImagePath(podcast)}" />
+          |    </div>
           |    <h1 class="maintitle podcast">${podcast.title}</h1>
-          |    ${podcast.mbSubtitle.map(st => "<h3 class=\"subtitle podcast\">" + st + "</h3>")}
+          |    ${podcast.mbSubtitle.fold("")(st => "<h3 class=\"subtitle podcast\">" + st + "</h3>")}
           |    <hr class="belowtitle podcast"/>
           |    <div class="description podcast">
           |    ${podcast.description}
@@ -33,14 +36,17 @@ object Renderer:
           |  <head>
           |    <title>${podcast.shortestTitle}: ${episodeSequencePfx(episode)} ${episode.shortestTitle}</title>
           |    <link rel="alternate" type="application/rss+xml" title="${podcast.shortestTitle}" href="${podcast.layout.rssFeedUrl(podcast)}" />
-          |    <link href="podcast.css" rel="stylesheet" />
+          |    <link href="../../podcast.css" rel="stylesheet" />
           |  </head>
           |  <body>
           |    <div class="contacts episode">
           |       [<a href="${podcast.layout.rssFeedUrl(podcast)}">rss</a>]
-          |    </div>          |
+          |    </div>
+          |    <div class="coverimage episode">
+          |      ${podcast.layout.mbEpisodeImageUrl(podcast,episode).fold("")(u => "<img src=\"" + u + "\" />")}
+          |    </div>
           |    <h1 class="maintitle episode">${podcast.shortestTitle}: ${episode.title}</h1>
-          |    ${episode.mbSubtitle.map(st => "<h3 class=\"subtitle episode\">" + st + "</h3>")}
+          |    ${episode.mbSubtitle.fold("")(st => "<h3 class=\"subtitle episode\">" + st + "</h3>")}
           |    <hr/>
           |    <div class="description episode">
           |    ${episode.description}
@@ -52,6 +58,7 @@ object Renderer:
     def srcStaticResourceBase : Path                = Path.of( "initsite", "src", "docroot" )
     def srcStaticResources    : immutable.Set[Path] = immutable.Set( Path.of("podcast.css") )
 
+    // this is terrible
     private def mbEpisodeSequencePfx(episode : Episode) : Option[String] =
       episode.mbSeasonNumber.map { s =>
         try
@@ -59,19 +66,19 @@ object Renderer:
           s"S${s}E${n} "
         catch
           case _ : NumberFormatException => ""
-      }
+      } orElse Some("")
 
     private def episodeSequencePfx(episode : Episode) = mbEpisodeSequencePfx(episode).get
 
     private def episodeListElement(podcast : Podcast, episode : Episode) : String =
       val epiNumberOrEmpty =
-        try "Episode" + episode.uid.toInt + ": "
+        try "Episode " + episode.uid.toInt + ": "
         catch
           case _ : NumberFormatException => ""
       s"""
          |<li>
          |  <p><b>${epiNumberOrEmpty}<a href="${podcast.layout.episodeUrl(podcast, episode)}">${episode.title}</a></b><p>
-         |  ${episode.mbSummary.map(summary =>"<p>" + summary + "</p>")}
+         |  ${episode.mbSummary.fold("")(summary =>"<p>" + summary + "</p>")}
          |</li>
          |""".stripMargin
   end Basic
