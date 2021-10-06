@@ -1,6 +1,6 @@
 # Audiofluidity
 
-## A simple Scala 3 static site generator for podacsts
+## A simple Scala 3 static site generator for podcasts
 
 I'm working on it.
 

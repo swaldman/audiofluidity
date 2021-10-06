@@ -3,6 +3,8 @@ package audiofluidity
 import java.nio.file.Path
 import scala.collection.*
 
+// I'd really rather use ScalaTags, but they're not available yet for Scala 3
+
 object Renderer:
   class Basic extends Renderer:
     def generateMainHtml( podcast: Podcast ) : String =

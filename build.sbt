@@ -7,7 +7,7 @@ lazy val root = project
   .settings(
     organization        := "com.mchange",
     name                := "audiocity",
-    version             := "0.1.0",
+    version             := "0.0.1-SNAPSHOT",
     scalaVersion        := ScalaVersion,
     libraryDependencies += "com.mchange" %% "mlog-scala" % "0.3.14-SNAPSHOT",
     libraryDependencies += "org.scala-lang" %% "scala3-compiler" % ScalaVersion,
