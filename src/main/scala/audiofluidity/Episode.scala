@@ -24,5 +24,7 @@ final case class Episode(
   mbSubtitle            : Option[String]          = None,                   // <itunes:subtitle>
   mbSummary             : Option[String]          = None,                   // <itunes:summary>
   mbZoneId              : Option[ZoneId]          = None                    // defaults to parent.defaultZoneId
-)
+):
+  def shortestTitle = mbShortTitle.getOrElse(title)
+
 

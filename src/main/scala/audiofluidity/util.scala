@@ -3,7 +3,7 @@ package audiofluidity
 import scala.collection.*
 import scala.xml.*
 import scala.jdk.StreamConverters.*
-import java.io.{File, IOException}
+import java.io.{BufferedInputStream, File, IOException}
 import java.net.{URL, URLClassLoader}
 import java.nio.file.{FileVisitResult, Files, LinkOption, Path, SimpleFileVisitor, StandardCopyOption}
 import java.nio.file.attribute.BasicFileAttributes
@@ -11,36 +11,12 @@ import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZoneId, ZonedDat
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
 import java.util.Locale
-
 import dotty.tools.dotc
 
-class AudiofluidityException(message : String, cause : Throwable = null) extends Exception(message, cause)
-class ConfigCompilationErrors(message : String, cause : Throwable = null) extends AudiofluidityException(message, cause)
-class MissingScalaConfigDirectory(message : String, cause : Throwable = null) extends AudiofluidityException(message, cause)
-class NoExtensionForMediaFile(message : String, cause : Throwable = null) extends AudiofluidityException(message, cause)
-class SourceMediaFileNotFound(message : String, cause : Throwable = null) extends AudiofluidityException(message, cause)
-class UnsupportedMediaFileType(message : String, cause : Throwable = null) extends AudiofluidityException(message, cause)
+import com.mchange.sc.v1.log.MLogger
+import com.mchange.sc.v1.log.MLevel.*
 
-final case class Admin( name : String, email : String)
-
-val DefaultGenerator = "Audiofluidity Static Podcast Site Generator"
-
-val SupportedAudioFileExtensions = immutable.Map(
-  "mp3" -> "audio/mpeg"
-)
-
-val SupportedImageFileExtensions = immutable.Map(
-  "jpg" -> "image/jpeg",
-  "png" -> "image/png"
-)
-
-val RssDateTimeFormatter = RFC_1123_DATE_TIME
-
-// private val AnnoyingDateTimeFormatter = RFC_1123_DATE_TIME.withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault())
-
-// private def formatDateTime(i : Instant) : String = AnnoyingDateTimeFormatter.format(i)
-
-// private def parseDateTime(s : String) : ZonedDateTime = ZonedDateTime.parse(s, DateTimeFormatter.RFC_1123_DATE_TIME)
+given logger : MLogger = MLogger(this)
 
 private def zonedDateTime( dateString : String, timeString : String, zoneId : ZoneId ) : ZonedDateTime =
   val ld  = LocalDate.parse( dateString )
@@ -109,25 +85,17 @@ private def pathcat(a : String, b : String) : String =
 private def pathcat(s : String*) : String =
   s.foldLeft("")((last,next)=>pathcat(last,next))
 
-val DefaultConfigPath           = Path.of("config")
-val DefaultScalaDirNameInConfig = Path.of("scala")
-val DefaultTmpNameInConfig      = Path.of("tmp")
-val DefaultClassesNameInTmp     = Path.of("classes")
-
-def compileConfig( fqcnPodcastSource : String, classPath : String, configPath : Path = DefaultConfigPath ) : PodcastSource =
-  val configScalaDir      = configPath.resolve( DefaultScalaDirNameInConfig )
-  val configTmpDir        = configPath.resolve( DefaultTmpNameInConfig )
-  val configTmpClassesDir = configTmpDir.resolve( DefaultClassesNameInTmp )
-  if !Files.exists(configScalaDir) then throw new MissingScalaConfigDirectory(s"Can't find scala config at '${configScalaDir}'")
-  Files.createDirectories(configTmpClassesDir)
-  val scalaFilePaths = Files.list(configScalaDir).toScala(List).filter(_.toString.endsWith(".scala"))
+def compileConfig( fqcnPodcastSource : String, classPath : String, config : Config ) : PodcastSource =
+  if !Files.exists(config.scalaDir) then throw new MissingScalaConfigDirectory(s"Can't find scala config at '${config.scalaDir}'")
+  Files.createDirectories(config.tmpClassesDir)
+  val scalaFilePaths = Files.list(config.scalaDir).toScala(List).filter(_.toString.endsWith(".scala"))
 
   def classFilePath( scalaFilePath : Path) =
     val scalaFilePathStr = scalaFilePath.toString
     val suffixIndex = scalaFilePathStr.lastIndexOf('.')
     val classFilePathStr = scalaFilePathStr.substring(0,suffixIndex) + ".class"
     val classFilePath = Path.of(classFilePathStr)
-    configTmpClassesDir.resolve(configScalaDir.relativize(classFilePath))
+    config.tmpClassesDir.resolve(config.scalaDir.relativize(classFilePath))
 
   val pathTups = scalaFilePaths.map( p => Tuple2(p,classFilePath(p)) )
 
@@ -138,7 +106,7 @@ def compileConfig( fqcnPodcastSource : String, classPath : String, configPath : 
   val mustCompileFiles = changedTups.collect { case (src, _) => src.toString }
 
   if mustCompileFiles.nonEmpty then
-    val args =  "-d" :: configTmpClassesDir.toString :: "-classpath" :: classPath :: mustCompileFiles
+    val args =  "-d" :: config.tmpClassesDir.toString :: "-classpath" :: classPath :: mustCompileFiles
 
     // println(configScalaDir)
     // println(args.mkString(" "))
@@ -150,10 +118,10 @@ def compileConfig( fqcnPodcastSource : String, classPath : String, configPath : 
 
   // see https://stackoverflow.com/questions/738393/how-to-use-urlclassloader-to-load-a-class-file
   val configTmpClassesFileUrl =
-    val s ="file:"+configTmpClassesDir.toAbsolutePath
+    val s ="file:"+config.tmpClassesDir.toAbsolutePath
     if s.last == '/' then s else s + '/'
 
-  val classLoader = new URLClassLoader("audiofluidity-config",Array(URL(configTmpClassesFileUrl)), classOf[Podcast].getClassLoader())
+  val classLoader = new URLClassLoader("audiofluidity-config-compiles",Array(URL(configTmpClassesFileUrl)), classOf[Podcast].getClassLoader())
   classLoader.loadClass(fqcnPodcastSource).getDeclaredConstructor().newInstance().asInstanceOf[PodcastSource]
 end compileConfig
 
@@ -241,4 +209,26 @@ private def recursiveDeleteDirectory( deleteDir : Path, leaveTop : Boolean = fal
   Files.walkFileTree(deleteDir, visitor)
 end recursiveDeleteDirectory
 
+// expects directories already created
+private def fillInResources(resourceBase : Path, resources : immutable.Set[Path], destDir : Path, cl : ClassLoader ) : Unit =
+  resources.foreach( resource => fillInResource(resourceBase, resource, destDir, cl) )
 
+// expects directories already created
+private def fillInResource(resourceBase : Path, resource : Path, destDir : Path, cl : ClassLoader ) : Unit =
+  TRACE.log(s"fillInResource(resourceBase=${resourceBase}, resource=${resource}, destDir=${destDir}, cl=${cl}")
+  val inPath  = resourceBase.resolve(resource)
+  val outPath =
+    val xformResource =
+      val filename = resource.getFileName.toString
+      if filename.indexOf("dotfile.") == 0 then
+        val newFileName = filename.replace("dotfile.",".")
+        Option(resource.getParent).fold(Path.of(newFileName))(parent => parent.resolve(newFileName))
+      else
+        resource
+    destDir.resolve(xformResource)
+  TRACE.log(s"Copying resource '${inPath}' to file '${outPath}'")
+  if (Files.notExists(outPath)) then
+    val is = new BufferedInputStream(cl.getResourceAsStream(inPath.toString))
+    try Files.copy(is, outPath) finally is.close()
+  else
+    INFO.log(s"File '${outPath}' exists already. Leaving as-is.")

@@ -9,31 +9,33 @@ import Element.Itunes
 import Element.Itunes.{ValidEpisodeType, ValidPodcastType}
 
 final case class Podcast(
-  build                  : Build  = new Build(),
-  layout                 : Layout = new Layout.Basic(),
   mainUrl                : String,
   title                  : String,
   description            : String,
   guidPrefix             : String,
-  shortOpaqueName        : String,                                                     // to be incorporated in generated filename
+  shortOpaqueName        : String, // to be incorporated in generated filenames
   mainImageFileName      : String,
-  editorEmail            : String,                                                     // managingEditor
+  editorEmail            : String, // managingEditor
   defaultAuthorEmail     : String,
-  renderer               : Renderer                       = Renderer.Basic,
+  episodes               : immutable.Seq[Episode],
+  renderer               : Renderer                       = new Renderer.Basic,
   itunesCategories       : immutable.Seq[Itunes.Category] = immutable.Seq.empty,
   zoneId                 : ZoneId                         = ZoneId.of("US/Pacific"),
   mbLanguage             : Option[LanguageCode]           = None,
   mbAdmin                : Option[Admin]                  = None,                      // <itunes:owner> and <webmaster>
-  mbPublisherEmail       : Option[String]                 = None,                      // <itunes:author>
+  mbExtraData            : Option[Any]                    = None,
   mbCopyrightHolder      : Option[String]                 = None,
   mbNewFeedUrl           : Option[String]                 = None,                      // <itunes:new-feed-url>
+  mbPublisherEmail       : Option[String]                 = None,                      // <itunes:author>
   mbShortTitle           : Option[String]                 = None,                      // <itunes:title>
   mbSubtitle             : Option[String]                 = None,                      // <itunes:subtitle>
   mbSummary              : Option[String]                 = None,                      // <itunes:summary>
   keywords               : immutable.Seq[String]          = immutable.Seq.empty,       // <itunes:keywords>
   podcastType            : ValidPodcastType               = ValidPodcastType.episodic, // <itunes:type>
-  explicit               : Boolean = false,                                            // <itunes:explicit>
-  block                  : Boolean = false,                                            // <itunes:block>
-  complete               : Boolean = false,
-  episodes               : immutable.Seq[Episode]
-)
+  explicit               : Boolean                        = false,                     // <itunes:explicit>
+  block                  : Boolean                        = false,                     // <itunes:block>
+  complete               : Boolean                        = false,                     // <itunes:complete>
+  build                  : Build  = new Build(),
+  layout                 : Layout = new Layout.Basic(),
+):
+  def shortestTitle = mbShortTitle.getOrElse(title)

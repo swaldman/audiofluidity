@@ -1,6 +1,8 @@
 package audiofluidity
 
-import java.nio.file.Path
+import java.nio.file.{Files,Path}
+
+import scala.collection.*
 
 final case class Build(
   baseDir                 : Path = Path.of(""),            // path to dir, empty String means current working directory
@@ -23,4 +25,16 @@ final case class Build(
   def srcEpisodeAudioFilePath(podcast : Podcast, episode : Episode)   : Path         = srcAudioDir.resolve(episode.sourceAudioFileName)
   def srcEpisodeRootDirPath(podcast : Podcast, episode : Episode)     : Path         = srcEpisodeRootDir.resolve(episode.uid)
   def mbSrcEpisodeImageFilePath(podcast : Podcast, episode : Episode) : Option[Path] = episode.mbSourceImageFileName.map( sifn => srcAudioDir.resolve(sifn) )
-end Build
+
+  def initDirs() : Unit =
+    require(Files.exists(baseDir), s"Podcast build base directory '${baseDir.toAbsolutePath}' must exist before build directories can be created.")
+    Files.createDirectories(srcDir)
+    Files.createDirectories(srcStaticDir)
+    Files.createDirectories(srcAudioDir)
+    Files.createDirectories(srcEpisodeRootDir)
+    Files.createDirectories(srcImageDir)
+    Files.createDirectories(podcastgenDir)
+
+  def buildResourceBase : Path = Path.of("initsite")
+
+  def buildResources : immutable.Set[Path] = immutable.Set( Path.of("dotfile.gitignore"))

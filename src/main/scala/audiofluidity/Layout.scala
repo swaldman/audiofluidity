@@ -47,8 +47,8 @@ trait Layout:
   def mbEpisodeImagePath(podcast : Podcast, episode : Episode) : Option[Path] // only if there is an episode image
 
   def mainUrl( podcast : Podcast )                          : String = podcast.mainUrl // html file should be directory index
-  def mainImageUrl(podcast : Podcast)                      : String = pathcat(podcast.mainUrl,mainImagePath(podcast).toString)
-  def rssFeedPathUrl(podcast : Podcast)                     : String = pathcat(podcast.mainUrl,rssFeedPath(podcast).toString)
+  def mainImageUrl(podcast : Podcast)                       : String = pathcat(podcast.mainUrl,mainImagePath(podcast).toString)
+  def rssFeedUrl(podcast : Podcast)                         : String = pathcat(podcast.mainUrl,rssFeedPath(podcast).toString)
   def episodeAudioUrl(podcast : Podcast, episode : Episode) : String = pathcat(podcast.mainUrl,episodeAudioPath(podcast,episode).toString)
   def episodeUrl( podcast : Podcast, episode : Episode)     : String = pathcat(podcast.mainUrl,episodeRoot(podcast,episode).toString) // episode html file should be a directory index
 
