@@ -119,9 +119,11 @@ def compileConfig( fqcnPodcastSource : String, classPath : String, config : Conf
   // see https://stackoverflow.com/questions/738393/how-to-use-urlclassloader-to-load-a-class-file
   val configTmpClassesFileUrl =
     val s ="file:"+config.tmpClassesDir.toAbsolutePath
-    if s.last == '/' then s else s + '/'
+    if s.last == '/' then URL(s) else URL(s + '/')
 
-  val classLoader = new URLClassLoader("audiofluidity-config-compiles",Array(URL(configTmpClassesFileUrl)), classOf[Podcast].getClassLoader())
+  val libJarUrls = config.libJars.map(p => URL("file:" + p.toAbsolutePath))
+
+  val classLoader = new URLClassLoader("audiofluidity-config-compiles",Array(configTmpClassesFileUrl) ++ libJarUrls, classOf[Podcast].getClassLoader())
   classLoader.loadClass(fqcnPodcastSource).getDeclaredConstructor().newInstance().asInstanceOf[PodcastSource]
 end compileConfig
 
