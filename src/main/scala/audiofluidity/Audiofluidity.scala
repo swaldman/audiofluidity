@@ -1,6 +1,6 @@
 package audiofluidity
 
-import java.io.{BufferedInputStream, FileNotFoundException}
+import java.io.{BufferedInputStream, BufferedOutputStream, FileNotFoundException}
 import java.nio.file.{Files, Path}
 import java.util.Properties
 
@@ -14,6 +14,32 @@ object Audiofluidity {
   given logger : MLogger = MLogger(this)
 
   private val PrimordialBuildFqcn = "audiofluidity.Build"
+
+  private def ensureConfigDirConsistentWithBuild( baseDir : Path, build : Build ) : Unit =
+    val configDir = baseDir.resolve(AudiofluidityConfigDirName)
+    val configPropsFile = configDir.resolve(AudiofluidityPropertiesFileName)
+
+    Files.createDirectories(configDir)
+    val props = new Properties()
+    if Files.exists(configPropsFile) then
+      val is = new BufferedInputStream(Files.newInputStream(configPropsFile))
+      try props.load(is) finally is.close()
+
+    def rewrite() : Unit =
+      val os = new BufferedOutputStream(Files.newOutputStream(configPropsFile))
+      try props.store(os, s"Rewritten ${new java.util.Date}.") finally os.close()
+
+    val buildClassName = build.getClass.getName
+    val writBuildClassName = props.getProperty(ConfigPropBuildClassName)
+    if writBuildClassName == null then
+      props.put(ConfigPropBuildClassName, buildClassName)
+      rewrite()
+    else if writBuildClassName != buildClassName then
+      val msg0 = s"This audiofluidity build directory was initially claimed for build structure '${writBuildClassName}', but you are currently operating on it with '${buildClassName}'"
+      val msg1 = s"If you wish operate on this directory with the new, perhaps inconsistent build, remove the key '${ConfigPropBuildClassName}' from '${configPropsFile}''"
+      SEVERE.log(msg0)
+      SEVERE.log(msg1)
+      throw new InconsistentBuildException(msg0 + " " + msg1)
 
   @main def go(args : String*) : Unit =
 
@@ -29,6 +55,8 @@ object Audiofluidity {
         case t : Throwable =>
           SEVERE.log(s"Could not load build class '${buildClassFqcn}'", t)
           throw t
+
+    ensureConfigDirConsistentWithBuild( baseDirPath, build )
 
     val podcastSourceFqcn = DefaultPodcastGeneratorFqcn
 

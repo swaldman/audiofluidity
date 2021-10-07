@@ -25,3 +25,6 @@ val BuildClassEnvVar  = "AUDIOFLUIDITY_BUILD_CLASS"
 val BaseDirSysProp = "audiofluidity.base.dir"
 val BaseDirEnvVar  = "AUDIOFLUIDITY_BASE_DIR"
 
+val AudiofluidityConfigDirName      = ".audiofluidity"
+val AudiofluidityPropertiesFileName = "audiofluidity.properties"
+val ConfigPropBuildClassName        = "audiofluidity.build.class.name"
