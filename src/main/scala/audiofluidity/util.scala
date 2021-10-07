@@ -230,7 +230,7 @@ private def fillInResource(resourceBase : Path, resource : Path, destDir : Path,
   TRACE.log(s"Copying resource '${inPath}' to file '${outPath}'")
 
   def doCopy() =
-    val is = new BufferedInputStream(cl.getResourceAsStream(inPath.toString))
+    val is = new BufferedInputStream(cl.getResourceAsStream(inPath.toString).ensuring(_ != null, s"Expected classloader resource '${inPath}' does not exist!"))
     try Files.copy(is, outPath) finally is.close()
 
   if Files.notExists(outPath) then
