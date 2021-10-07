@@ -3,22 +3,46 @@ package audiofluidity
 import java.nio.file.{Files,Path}
 
 import scala.collection.*
+import scala.jdk.StreamConverters.*
 
-final case class Build(
-  baseDir                 : Path = Path.of(""),            // path to dir, empty String means current working directory
-
-  srcDirName              : String = "src",         // relative to baseDir
-  srcStaticDirName        : String = "docroot",     // relative to srcDir, static resources
-  srcAudioDirName         : String = "audio",       // relative to srcDir
-  srcEpisodeRootName      : String = "episoderoot", // relative to srcDir, contains folders of static resources named by episode UID
-  srcImageDirName         : String = "image",       // relative to srcDir
-  podcastgenDirName       : String = "podcastgen",  // relative to baseDir
+class Build(
+  val baseDir             : Path,   // path to dir, empty String means current working directory
+  srcDirName              : String, // relative to baseDir
+  srcScalaDirName         : String, // relative to srcDir
+  srcStaticDirName        : String, // relative to srcDir, static resources
+  srcAudioDirName         : String, // relative to srcDir
+  srcEpisodeRootName      : String, // relative to srcDir, contains folders of static resources named by episode UID
+  srcImageDirName         : String, // relative to srcDir
+  libDirName              : String, // relative to baseDir
+  tmpDirName              : String, // relative to baseDir
+  tmpClassesDirName       : String, // relative to tmpDir
+  tmpStaticDirName        : String, // relative to tmpDir
+  podcastgenDirName       : String  // relative to baseDir
 ):
+  def this( baseDir : Path ) = this(
+    baseDir,
+    srcDirName         = "src",             // relative to baseDir
+    srcScalaDirName    = "scala",           // relative to srcDir
+    srcStaticDirName   = "docroot",         // relative to srcDir, static resources
+    srcAudioDirName    = "audio",           // relative to srcDir
+    srcEpisodeRootName = "episoderoot",     // relative to srcDir, contains folders of static resources named by episode UID
+    srcImageDirName    = "image",           // relative to srcDir
+    libDirName         = "lib",             // relative to baseDir
+    tmpDirName         = "tmp",             // relative to baseDir
+    tmpClassesDirName  = "classes",         // relative to tmpDir
+    tmpStaticDirName   = "docroot",         // relative to tmpDir
+    podcastgenDirName  = "podcastgen",      // relative to baseDir
+  )
+
   val srcDir              = baseDir.resolve(srcDirName)
+  val srcScalaDir         = srcDir.resolve(srcScalaDirName)
   val srcStaticDir        = srcDir.resolve(srcStaticDirName)
   val srcAudioDir         = srcDir.resolve(srcAudioDirName)
   val srcEpisodeRootDir   = srcDir.resolve(srcEpisodeRootName)
   val srcImageDir         = srcDir.resolve(srcImageDirName)
+  val libDir              = baseDir.resolve(libDirName)
+  val tmpDir              = baseDir.resolve(tmpDirName)
+  val tmpClassesDir       = tmpDir.resolve(tmpClassesDirName)
   val podcastgenDir       = baseDir.resolve(podcastgenDirName)
 
   def srcMainImageFilePath(podcast : Podcast)                         : Path         = srcImageDir.resolve(podcast.mainImageFileName)
@@ -28,13 +52,21 @@ final case class Build(
 
   def initDirs() : Unit =
     require(Files.exists(baseDir), s"Podcast build base directory '${baseDir.toAbsolutePath}' must exist before build directories can be created.")
-    Files.createDirectories(srcDir)
+    Files.createDirectories(srcScalaDir) // creates srcDir along the way
     Files.createDirectories(srcStaticDir)
     Files.createDirectories(srcAudioDir)
     Files.createDirectories(srcEpisodeRootDir)
     Files.createDirectories(srcImageDir)
-    Files.createDirectories(podcastgenDir)
+    Files.createDirectories(libDir)
+
+  def libJars : List[Path] =
+    if Files.exists(libDir) then
+      Files.list(libDir).toScala(List).filter(_.toString.endsWith(".jar"))
+    else
+      Nil
+
+  def expectedPodcastGeneratorPath = srcScalaDir.resolve("AudiofluidityGenerator.scala")
 
   def buildResourceBase : Path = Path.of("initsite")
 
-  def buildResources : immutable.Set[Path] = immutable.Set( Path.of("dotfile.gitignore"))
+  def buildResources : immutable.Set[Path] = immutable.Set( Path.of("dotfile.gitignore"), Path.of("src","scala","AudiofluidityGenerator.scala"))

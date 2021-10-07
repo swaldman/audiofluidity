@@ -13,34 +13,38 @@ object Audiofluidity {
 
   given logger : MLogger = MLogger(this)
 
+  private val PrimordialBuildFqcn = "audiofluidity.Build"
+
   @main def go(args : String*) : Unit =
 
-    val config =
-      val mbExternal = Option( sys.props(ConfigDirSysProp) ) orElse sys.env.get(ConfigDirEnvVar)
-      val mbExternalPath = mbExternal.map( v => Path.of(v) )
-      mbExternalPath.foreach { path =>
-        if Files.notExists(path) then
-          throw new FileNotFoundException(s"Config dir '${path}' does not exist.'")
-        else if !Files.isDirectory(path) then
-          throw new AudiofluidityException(s"Config dir '${path}' is not a directory!")
-      }
-      Config(mbExternalPath.getOrElse(Config.DefaultPath))
+    val buildClassFqcn =
+      (Option( sys.props(BuildClassSysProp) ) orElse sys.env.get(BuildClassEnvVar)).getOrElse(PrimordialBuildFqcn)
 
-    val podcastSourceFqcn = DefaultPodcastSourceFqcn
+    val baseDirPath =
+      (Option( sys.props(BaseDirSysProp) ) orElse sys.env.get(BaseDirEnvVar)).map(p => Path.of(p)).getOrElse(Path.of("")) // default to current working dir
+
+    val build =
+      try Class.forName(buildClassFqcn).getDeclaredConstructor(classOf[Path]).newInstance(baseDirPath).asInstanceOf[Build]
+      catch
+        case t : Throwable =>
+          SEVERE.log(s"Could not load build class '${buildClassFqcn}'", t)
+          throw t
+
+    val podcastSourceFqcn = DefaultPodcastGeneratorFqcn
 
     val sep = sys.props("path.separator")
-    val cfgLibJars = config.libJars.mkString(sep)
-    val appClassPath = sys.props("java.class.path") + sep + config.tmpClassesDir + sep + cfgLibJars
+    val libJars = build.libJars.mkString(sep)
+    val appClassPath = sys.props("java.class.path") + sep + build.tmpClassesDir + sep + libJars
 
-    def buildConfigPodcast() : Podcast =
+    def buildPodcastGenerator() : PodcastGenerator =
       try
-        INFO.log("Compiling scala-defined podcast...")
-        val podcastSource = compileConfig( podcastSourceFqcn, appClassPath, config )
-        INFO.log("Compilation of scala-defined podcast succeeded.")
-        podcastSource.toPodcast
+        INFO.log("Compiling scala-defined podcast generator...")
+        val podcastGenerator = compileGenerator( podcastSourceFqcn, appClassPath, build )
+        INFO.log("Compilation of scala-defined podcast generator succeeded.")
+        podcastGenerator
       catch
         case ite : java.lang.reflect.InvocationTargetException if ite.getCause.isInstanceOf[scala.NotImplementedError] =>
-          SEVERE.log("Please replace all fields marked '???' with valid values in your podcast source!")
+          SEVERE.log("Please replace all fields marked '???' with valid values in your podcast generator!")
           throw ite.getCause
 
     val cl = this.getClass.getClassLoader
@@ -49,26 +53,21 @@ object Audiofluidity {
       val command = args.head
       command match
         case "init" =>
-          val (build, renderer) =
-            try
-              val p = buildConfigPodcast()
-              (p.build, p.renderer)
-            catch
-              case _ : Exception => (new Build(), new Renderer.Basic)
-          config.initDirs()
-          fillInResources(config.configResourceBase, config.configResources, config.basePath, cl)
           build.initDirs()
           fillInResources(build.buildResourceBase, build.buildResources, build.baseDir, cl)
-          fillInResources(renderer.srcStaticResourceBase, renderer.srcStaticResources, build.srcStaticDir, cl)
           println("Podcast template initialized.")
         case "clean" =>
-          val podcast = buildConfigPodcast()
-          recursiveDeleteDirectory(config.tmpDir, leaveTop = true)
-          recursiveDeleteDirectory(podcast.build.podcastgenDir, leaveTop = true)
+          recursiveDeleteDirectory(build.tmpDir, leaveTop = true)
+          recursiveDeleteDirectory(build.podcastgenDir, leaveTop = true)
         case "generate" =>
-          val podcast = buildConfigPodcast()
+          val generator = buildPodcastGenerator()
+          val layout   = generator.layout
+          val renderer = generator.renderer
+          val podcast  = generator.podcast
+          INFO.log(s"Adding renderer-defined documents to '${build.podcastgenDir}' directory before generation, if overriding documents are not already defined.")
+          fillInResources(renderer.staticResourceBase, renderer.staticResources, build.podcastgenDir, cl, overwrite=true)
           INFO.log("Generating podcast website and RSS feed.")
-          generate( podcast )
+          generate( build, layout, renderer, podcast )
           INFO.log(s"Successfully generated podcast '${podcast.title}'.")
         case _ => usage()
     else usage()

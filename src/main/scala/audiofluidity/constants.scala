@@ -17,7 +17,11 @@ val SupportedImageFileExtensions = immutable.Map(
 
 val RssDateTimeFormatter = RFC_1123_DATE_TIME
 
-val DefaultPodcastSourceFqcn = "AudiofluiditySource" // intentionally in the default package
+val DefaultPodcastGeneratorFqcn = "AudiofluidityGenerator" // intentionally in the default package
 
-val ConfigDirSysProp = "audiofluidity.config.dir"
-val ConfigDirEnvVar  = "AUDIOFLUIDITY_CONFIG_DIR"
+val BuildClassSysProp = "audiofluidity.build.class"
+val BuildClassEnvVar  = "AUDIOFLUIDITY_BUILD_CLASS"
+
+val BaseDirSysProp = "audiofluidity.base.dir"
+val BaseDirEnvVar  = "AUDIOFLUIDITY_BASE_DIR"
+

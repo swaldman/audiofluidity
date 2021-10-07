@@ -11,7 +11,7 @@ object PodcastFeed:
   private val RdfContentModuleNamespaceBinding = new NamespaceBinding("content","http://purl.org/rss/1.0/modules/content/", TopScope)
   private val AppleNamespaceBinding = new NamespaceBinding("itunes","http://www.itunes.com/dtds/podcast-1.0.dtd", RdfContentModuleNamespaceBinding)
 
-  private def item(podcast : Podcast, episode : Episode, examineMedia : Boolean) : (Item, Decoration.Item) =
+  private def item(build : Build, layout : Layout, podcast : Podcast, episode : Episode, examineMedia : Boolean) : (Item, Decoration.Item) =
     val guid       = _guid(podcast, episode)
     val author     = episode.mbAuthorEmail.getOrElse(podcast.defaultAuthorEmail)
     val zoneId     = episode.mbZoneId.getOrElse( podcast.zoneId )
@@ -20,16 +20,16 @@ object PodcastFeed:
     // enclosure info...
     val audioExtension = audioFileExtension(episode)
     val sourceAudioFileMimeType = mimeTypeForSupportedAudioFileExtension(audioExtension)
-    val sourceAudioFile = podcast.build.srcEpisodeAudioFilePath(podcast, episode).toFile
+    val sourceAudioFile = build.srcEpisodeAudioFilePath(podcast, episode).toFile
     if examineMedia && !sourceAudioFile.exists then throw new SourceMediaFileNotFound(s"Audio file '${sourceAudioFile}' not found.")
     val sourceAudioFileLength = if examineMedia then sourceAudioFile.length() else 0
-    val destinationAudioFileUrl = podcast.layout.episodeAudioUrl(podcast, episode)
+    val destinationAudioFileUrl = layout.episodeAudioUrl(podcast, episode)
     val mbDurationInSeconds =
       if examineMedia && audioExtension == "mp3" then Some( mp3FileDurationInSeconds( sourceAudioFile ) ) else None
 
     val itemOut = Item(
       title       = Title(episode.title),
-      link        = Link(podcast.layout.episodeUrl(podcast,episode)),
+      link        = Link(layout.episodeUrl(podcast,episode)),
       description = Description(episode.description),
       author      = Author(author),
       categories  = immutable.Seq.empty,
@@ -61,10 +61,10 @@ object PodcastFeed:
       episode.mbSourceImageFileName.flatMap { sourceImageFileName =>
         val imageExtension = mediaFileExtension( sourceImageFileName )
         ensureSupportedImageExtension(imageExtension)
-        podcast.build.mbSrcEpisodeImageFilePath(podcast, episode).flatMap { sourceImageFilePath =>
+        build.mbSrcEpisodeImageFilePath(podcast, episode).flatMap { sourceImageFilePath =>
           val sourceImageFile = sourceImageFilePath.toFile
           if examineMedia && !sourceImageFile.exists then throw new SourceMediaFileNotFound(s"Image file '${sourceImageFile}' not found.")
-          podcast.layout.mbEpisodeImageUrl(podcast, episode).map( episodeImageUrl => Itunes.Image(episodeImageUrl) )
+          layout.mbEpisodeImageUrl(podcast, episode).map( episodeImageUrl => Itunes.Image(episodeImageUrl) )
         }
       }
 
@@ -87,12 +87,12 @@ object PodcastFeed:
       
   end item
 
-  private def channel(podcast : Podcast, items : immutable.Seq[Item]) : (Channel, Decoration.Channel) =
+  private def channel(build : Build, layout : Layout, podcast : Podcast, items : immutable.Seq[Item]) : (Channel, Decoration.Channel) =
     val zdtNow = ZonedDateTime.now(podcast.zoneId)
     val title = Title(podcast.title)
     val link  = Link(podcast.mainUrl)
     val description = Description(podcast.description)
-    val imageUrl = podcast.layout.mainImageUrl(podcast)
+    val imageUrl = layout.mainImageUrl(podcast)
     val channelOut = Channel(
       title       = title,
       link        = link,
@@ -124,10 +124,10 @@ object PodcastFeed:
 
   end channel  
 
-  def apply(podcast : Podcast, examineMedia : Boolean = true) : PodcastFeed =
-    val itemItemDs = podcast.episodes.map(e => item(podcast, e, examineMedia) )
+  def apply(build : Build, layout : Layout, podcast : Podcast, examineMedia : Boolean = true) : PodcastFeed =
+    val itemItemDs = podcast.episodes.map(e => item(build, layout, podcast, e, examineMedia) )
     val items = itemItemDs.map( _._1 )
-    val (channelIn, channelD) = channel(podcast, items)
+    val (channelIn, channelD) = channel(build, layout, podcast, items)
     val itemDsMap = itemItemDs.map { case (item, itemD) => (item.guid.get.id, itemD)}.toMap // we always create <guid> elements, so get should always succeed
     PodcastFeed(channelIn, channelD, itemDsMap)
 

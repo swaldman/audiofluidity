@@ -48,12 +48,12 @@ private def mediaFileExtension(filename : String) : String =
 
 private def audioFileExtension(episode : Episode) : String = mediaFileExtension(episode.sourceAudioFileName)
 
-private def episodeAudioSourceFilePath( podcast : Podcast, episode : Episode ) : Path = podcast.build.srcAudioDir.resolve(episode.sourceAudioFileName)
+private def episodeAudioSourceFilePath( build : Build, podcast : Podcast, episode : Episode ) : Path = build.srcAudioDir.resolve(episode.sourceAudioFileName)
 
 private def mbEpisodeImageFileExtension(episode : Episode) : Option[String] = episode.mbSourceImageFileName.map(mediaFileExtension).map(ensureSupportedImageExtension)
 
-private def mbEpisodeImageSourceFilePath( podcast : Podcast, episode : Episode) : Option[Path] =
-  episode.mbSourceImageFileName.map(sourceImageFileName => podcast.build.srcAudioDir.resolve(sourceImageFileName))
+private def mbEpisodeImageSourceFilePath( build : Build, podcast : Podcast, episode : Episode) : Option[Path] =
+  episode.mbSourceImageFileName.map(sourceImageFileName => build.srcAudioDir.resolve(sourceImageFileName))
 
 private def mainImageFileExtension(podcast : Podcast) : String = ensureSupportedImageExtension( mediaFileExtension(podcast.mainImageFileName) )
 
@@ -85,17 +85,17 @@ private def pathcat(a : String, b : String) : String =
 private def pathcat(s : String*) : String =
   s.foldLeft("")((last,next)=>pathcat(last,next))
 
-def compileConfig( fqcnPodcastSource : String, classPath : String, config : Config ) : PodcastSource =
-  if !Files.exists(config.scalaDir) then throw new MissingScalaConfigDirectory(s"Can't find scala config at '${config.scalaDir}'")
-  Files.createDirectories(config.tmpClassesDir)
-  val scalaFilePaths = Files.list(config.scalaDir).toScala(List).filter(_.toString.endsWith(".scala"))
+def compileGenerator( fqcnPodcastGenerator : String, classPath : String, build : Build ) : PodcastGenerator =
+  if !Files.exists(build.srcScalaDir) then throw new MissingScalaSourceDirectory(s"Can't find scala source at '${build.srcScalaDir}'")
+  Files.createDirectories(build.tmpClassesDir)
+  val scalaFilePaths = Files.list(build.srcScalaDir).toScala(List).filter(_.toString.endsWith(".scala"))
 
   def classFilePath( scalaFilePath : Path) =
     val scalaFilePathStr = scalaFilePath.toString
     val suffixIndex = scalaFilePathStr.lastIndexOf('.')
     val classFilePathStr = scalaFilePathStr.substring(0,suffixIndex) + ".class"
     val classFilePath = Path.of(classFilePathStr)
-    config.tmpClassesDir.resolve(config.scalaDir.relativize(classFilePath))
+    build.tmpClassesDir.resolve(build.srcScalaDir.relativize(classFilePath))
 
   val pathTups = scalaFilePaths.map( p => Tuple2(p,classFilePath(p)) )
 
@@ -106,64 +106,63 @@ def compileConfig( fqcnPodcastSource : String, classPath : String, config : Conf
   val mustCompileFiles = changedTups.collect { case (src, _) => src.toString }
 
   if mustCompileFiles.nonEmpty then
-    val args =  "-d" :: config.tmpClassesDir.toString :: "-classpath" :: classPath :: mustCompileFiles
+    val args =  "-d" :: build.tmpClassesDir.toString :: "-classpath" :: classPath :: mustCompileFiles
 
     // println(configScalaDir)
     // println(args.mkString(" "))
 
     // see https://github.com/lampepfl/dotty/blob/master/compiler/src/dotty/tools/dotc/Driver.scala
     val errors = (new dotc.Driver).process(args.toArray).hasErrors
-    if errors then throw new ConfigCompilationErrors("Errors occurred while attempting to compile the config")
+    if errors then throw new PodcastGeneratorCompilationFailed("Errors occurred while attempting to compile the config")
   end if
 
   // see https://stackoverflow.com/questions/738393/how-to-use-urlclassloader-to-load-a-class-file
   val configTmpClassesFileUrl =
-    val s ="file:"+config.tmpClassesDir.toAbsolutePath
+    val s ="file:"+build.tmpClassesDir.toAbsolutePath
     if s.last == '/' then URL(s) else URL(s + '/')
 
-  val libJarUrls = config.libJars.map(p => URL("file:" + p.toAbsolutePath))
+  val libJarUrls = build.libJars.map(p => URL("file:" + p.toAbsolutePath))
 
   val classLoader = new URLClassLoader("audiofluidity-config-compiles",Array(configTmpClassesFileUrl) ++ libJarUrls, classOf[Podcast].getClassLoader())
-  classLoader.loadClass(fqcnPodcastSource).getDeclaredConstructor().newInstance().asInstanceOf[PodcastSource]
-end compileConfig
+  classLoader.loadClass(fqcnPodcastGenerator).getDeclaredConstructor().newInstance().asInstanceOf[PodcastGenerator]
+end compileGenerator
 
-def generate(podcast : Podcast, examineMedia : Boolean = true) : Unit =
-  val podcastFeed = PodcastFeed( podcast, examineMedia = examineMedia )
-  val feedPath = podcast.build.podcastgenDir.resolve(podcast.layout.rssFeedPath(podcast))
+def generate(build : Build, layout : Layout, renderer : Renderer, podcast : Podcast, examineMedia : Boolean = true) : Unit =
+  val podcastFeed = PodcastFeed( build, layout, podcast, examineMedia = examineMedia )
+  val feedPath = build.podcastgenDir.resolve(layout.rssFeedPath(podcast))
   val feedParent = feedPath.getParent()
   Files.createDirectories(feedParent)
   Files.writeString(feedPath,podcastFeed.asXmlText, scala.io.Codec.UTF8.charSet)
-  val srcMainImageFilePath = podcast.build.srcMainImageFilePath(podcast)
-  val destMainImagePath = podcast.build.podcastgenDir.resolve(podcast.layout.mainImagePath(podcast))
+  val srcMainImageFilePath = build.srcMainImageFilePath(podcast)
+  val destMainImagePath = build.podcastgenDir.resolve(layout.mainImagePath(podcast))
   Files.createDirectories(destMainImagePath.getParent)
   Files.copy(srcMainImageFilePath, destMainImagePath, StandardCopyOption.REPLACE_EXISTING)
-  val destMainHtmlPath = podcast.build.podcastgenDir.resolve(podcast.layout.mainHtmlPath(podcast))
-  Files.writeString(destMainHtmlPath,podcast.renderer.generateMainHtml(podcast), scala.io.Codec.UTF8.charSet)
-  podcast.episodes.foreach( episode => generateEpisode(podcast, episode) )
-  val srcStaticDirPath = podcast.build.srcStaticDir
-  val destStaticDirPath = podcast.build.podcastgenDir
+  val destMainHtmlPath = build.podcastgenDir.resolve(layout.mainHtmlPath(podcast))
+  Files.writeString(destMainHtmlPath,renderer.generateMainHtml(build, layout, podcast), scala.io.Codec.UTF8.charSet)
+  podcast.episodes.foreach( episode => generateEpisode(build, layout, renderer, podcast, episode) )
+  val srcStaticDirPath = build.srcStaticDir
+  val destStaticDirPath = build.podcastgenDir
   if Files.exists(srcStaticDirPath) then recursiveCopyDirectory(srcStaticDirPath,destStaticDirPath)
 end generate
 
-private def generateEpisode( podcast: Podcast, episode : Episode ) : Unit =
-  def root( path : Path ) = podcast.build.podcastgenDir.resolve(path)
-  val episodeRoot = root(podcast.layout.episodeRoot(podcast,episode))
+private def generateEpisode(build : Build, layout : Layout, renderer : Renderer, podcast: Podcast, episode : Episode ) : Unit =
+  def root( path : Path ) = build.podcastgenDir.resolve(path)
+  val episodeRoot = root(layout.episodeRoot(podcast,episode))
   Files.createDirectories(episodeRoot)
-  val srcEpisodeAudioPath = podcast.build.srcEpisodeAudioFilePath(podcast,episode)
-  val destEpisodeAudioPath = root(podcast.layout.episodeAudioPath(podcast,episode))
+  val srcEpisodeAudioPath = build.srcEpisodeAudioFilePath(podcast,episode)
+  val destEpisodeAudioPath = root(layout.episodeAudioPath(podcast,episode))
   Files.createDirectories(destEpisodeAudioPath.getParent)
   Files.copy(srcEpisodeAudioPath, destEpisodeAudioPath, StandardCopyOption.REPLACE_EXISTING)
   for
-    srcEpisodeImagePath  <- podcast.layout.mbEpisodeImagePath(podcast, episode).map(root)
-    destEpisodeImagePath <- podcast.build.mbSrcEpisodeImageFilePath(podcast,episode).map(root)
+    srcEpisodeImagePath  <- layout.mbEpisodeImagePath(podcast, episode).map(root)
+    destEpisodeImagePath <- build.mbSrcEpisodeImageFilePath(podcast,episode).map(root)
   yield
     Files.createDirectories(destEpisodeImagePath.getParent)
     Files.copy(srcEpisodeImagePath,destEpisodeImagePath)
-  val episodeIndexHtmlPath = root(podcast.layout.episodeHtmlPath(podcast,episode))
-  val episodeRenderer = episode.mbOverrideRenderer.getOrElse( podcast.renderer )
-  val episodeIndexHtml = episodeRenderer.generateEpisodeHtml(podcast, episode)
+  val episodeIndexHtmlPath = root(layout.episodeHtmlPath(podcast,episode))
+  val episodeIndexHtml = renderer.generateEpisodeHtml(build, layout, podcast, episode)
   Files.writeString(episodeIndexHtmlPath, episodeIndexHtml, scala.io.Codec.UTF8.charSet)
-  val srcEpisodeRootPath = podcast.build.srcEpisodeRootDirPath(podcast,episode)
+  val srcEpisodeRootPath = build.srcEpisodeRootDirPath(podcast,episode)
   if Files.exists(srcEpisodeRootPath) then recursiveCopyDirectory(srcEpisodeRootPath,episodeRoot)
 end generateEpisode
 
@@ -212,11 +211,11 @@ private def recursiveDeleteDirectory( deleteDir : Path, leaveTop : Boolean = fal
 end recursiveDeleteDirectory
 
 // expects directories already created
-private def fillInResources(resourceBase : Path, resources : immutable.Set[Path], destDir : Path, cl : ClassLoader ) : Unit =
+private def fillInResources(resourceBase : Path, resources : immutable.Set[Path], destDir : Path, cl : ClassLoader, overwrite : Boolean = false ) : Unit =
   resources.foreach( resource => fillInResource(resourceBase, resource, destDir, cl) )
 
 // expects directories already created
-private def fillInResource(resourceBase : Path, resource : Path, destDir : Path, cl : ClassLoader ) : Unit =
+private def fillInResource(resourceBase : Path, resource : Path, destDir : Path, cl : ClassLoader, overwrite : Boolean = false ) : Unit =
   TRACE.log(s"fillInResource(resourceBase=${resourceBase}, resource=${resource}, destDir=${destDir}, cl=${cl}")
   val inPath  = resourceBase.resolve(resource)
   val outPath =
@@ -229,8 +228,15 @@ private def fillInResource(resourceBase : Path, resource : Path, destDir : Path,
         resource
     destDir.resolve(xformResource)
   TRACE.log(s"Copying resource '${inPath}' to file '${outPath}'")
-  if (Files.notExists(outPath)) then
+
+  def doCopy() =
     val is = new BufferedInputStream(cl.getResourceAsStream(inPath.toString))
     try Files.copy(is, outPath) finally is.close()
+
+  if Files.notExists(outPath) then
+    doCopy()
+  else if (overwrite)
+    WARNING.log(s"File '${outPath}' exists already. Overwriting.")
+    doCopy()
   else
-    INFO.log(s"File '${outPath}' exists already. Leaving as-is.")
+    WARNING.log(s"File '${outPath}' exists already. Leaving as-is.")

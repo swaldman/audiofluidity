@@ -18,7 +18,6 @@ final case class Podcast(
   editorEmail            : String, // managingEditor
   defaultAuthorEmail     : String,
   episodes               : immutable.Seq[Episode],
-  renderer               : Renderer                       = new Renderer.Basic,
   itunesCategories       : immutable.Seq[Itunes.Category] = immutable.Seq.empty,
   zoneId                 : ZoneId                         = ZoneId.of("US/Pacific"),
   mbLanguage             : Option[LanguageCode]           = None,
@@ -35,7 +34,5 @@ final case class Podcast(
   explicit               : Boolean                        = false,                     // <itunes:explicit>
   block                  : Boolean                        = false,                     // <itunes:block>
   complete               : Boolean                        = false,                     // <itunes:complete>
-  build                  : Build  = new Build(),
-  layout                 : Layout = new Layout.Basic(),
 ):
   def shortestTitle = mbShortTitle.getOrElse(title)
