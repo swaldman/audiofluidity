@@ -243,4 +243,4 @@ private def fillInResource(resourceBase : Path, resource : Path, destDir : Path,
     INFO.log(s"File '${outPath}' exists already. Overwriting with classloader resource '${inPath}'.")
     doCopy()
   else
-    WARNING.log(s"File '${outPath}' exists already. Leaving as-is, NOT overwriting with classloader resource '${inPath}'.")
+    INFO.log(s"File '${outPath}' exists already. Leaving as-is, NOT overwriting with classloader resource '${inPath}'.")

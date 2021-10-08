@@ -38,7 +38,7 @@ object Renderer:
           |  <head>
           |    <title>${podcast.shortestTitle}: ${episodeSequencePfx(episode)} ${episode.shortestTitle}</title>
           |    <link rel="alternate" type="application/rss+xml" title="${podcast.shortestTitle}" href="../../${layout.rssFeedPath(podcast)}" />
-          |    <link href="${layout.episodeBacklinkToRoot(podcast,episode).resolve("podcast.css")} rel="stylesheet" />
+          |    <link href="${layout.episodeBacklinkToRoot(podcast,episode).resolve("podcast.css")}" rel="stylesheet" />
           |  </head>
           |  <body class="episode">
           |    <div class="contacts episode">
@@ -50,7 +50,7 @@ object Renderer:
           |    </div>
           |    <h1 class="maintitle episode">${podcast.shortestTitle}: ${episode.title}</h1>
           |    ${episode.mbSubtitle.fold("")(st => "<h3 class=\"subtitle episode\">" + st + "</h3>")}
-          |    <hr/>
+          |    <hr class="belowtitle episode"/>
           |    <div class="description episode">
           |    ${episode.description}
           |    </div>
