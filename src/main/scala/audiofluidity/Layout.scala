@@ -20,16 +20,18 @@ object Layout:
       Path.of(s"${podcast.shortOpaqueName}-coverart.${extension}")
     def rssFeedPath(podcast : Podcast) : Path = Path.of(rssFeedFileName)
     def episodeRoot(podcast : Podcast, episode : Episode) : Path = Path.of(episodesDirName,s"episode-${episode.uid}")
+
+    // paths below are relative to episode root
     def episodeAudioPath(podcast : Podcast, episode : Episode) : Path =
       val extension = audioFileExtension(episode)
-      val fileName = destEpisodeAudioFileName(podcast, episode, extension)
-      episodeRoot(podcast,episode).resolve(fileName)
+      Path.of( destEpisodeAudioFileName(podcast, episode, extension) )
     def episodeHtmlPath(podcast : Podcast, episode : Episode)  : Path =
-      episodeRoot(podcast,episode).resolve(indexHtmlName)
+      Path.of( indexHtmlName )
+    def episodeBacklinkToRoot(podcast : Podcast, episode : Episode) : Path =
+      Path.of("..","..")
     def mbEpisodeImagePath(podcast : Podcast, episode : Episode) : Option[Path] = // only if there is an episode image
       mbEpisodeImageFileExtension(episode).map { extension =>
-        val fileName = destEpisodeImageFileName(podcast, episode, extension)
-        episodeRoot(podcast,episode).resolve(fileName)
+        Path.of( destEpisodeImageFileName(podcast, episode, extension) )
       }
 
 trait Layout:
@@ -41,15 +43,10 @@ trait Layout:
   def mainImagePath(podcast : Podcast)                        : Path
   def rssFeedPath(podcast : Podcast)                          : Path
   def episodeRoot(podcast : Podcast, episode : Episode)       : Path
+
+  // paths below are relative to episode root
   def episodeAudioPath(podcast : Podcast, episode : Episode)  : Path
   def episodeHtmlPath(podcast : Podcast, episode : Episode)   : Path
-
+  def episodeBacklinkToRoot(podcast : Podcast, episode : Episode) : Path
   def mbEpisodeImagePath(podcast : Podcast, episode : Episode) : Option[Path] // only if there is an episode image
 
-  def mainUrl( podcast : Podcast )                          : String = podcast.mainUrl // html file should be directory index
-  def mainImageUrl(podcast : Podcast)                       : String = pathcat(podcast.mainUrl,mainImagePath(podcast).toString)
-  def rssFeedUrl(podcast : Podcast)                         : String = pathcat(podcast.mainUrl,rssFeedPath(podcast).toString)
-  def episodeAudioUrl(podcast : Podcast, episode : Episode) : String = pathcat(podcast.mainUrl,episodeAudioPath(podcast,episode).toString)
-  def episodeUrl( podcast : Podcast, episode : Episode)     : String = pathcat(podcast.mainUrl,episodeRoot(podcast,episode).toString) // episode html file should be a directory index
-
-  def mbEpisodeImageUrl(podcast : Podcast, episode : Episode) : Option[String] = mbEpisodeImagePath(podcast,episode).map(ip => pathcat(podcast.mainUrl,ip.toString))

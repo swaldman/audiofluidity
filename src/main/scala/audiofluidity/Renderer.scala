@@ -11,12 +11,12 @@ object Renderer:
       s"""|<html>
           |  <head>
           |     <title>${podcast.shortestTitle}</title>
-          |     <link rel="alternate" type="application/rss+xml" title="${podcast.shortestTitle}" href="${layout.rssFeedUrl(podcast)}" />
+          |     <link rel="alternate" type="application/rss+xml" title="${podcast.shortestTitle}" href="${layout.rssFeedPath(podcast)}" />
           |     <link href="podcast.css" rel="stylesheet" />
           |   </head>
           |  <body class="podcast">
           |    <div class="contacts podcast">
-          |       [<a href="${layout.rssFeedUrl(podcast)}">rss</a>]
+          |       [<a href="${layout.rssFeedPath(podcast)}">rss</a>]
           |    </div>
           |    <div class="coverimage podcast">
           |      <img src="${layout.mainImagePath(podcast)}" />
@@ -37,15 +37,16 @@ object Renderer:
       s"""|<html>
           |  <head>
           |    <title>${podcast.shortestTitle}: ${episodeSequencePfx(episode)} ${episode.shortestTitle}</title>
-          |    <link rel="alternate" type="application/rss+xml" title="${podcast.shortestTitle}" href="${layout.rssFeedUrl(podcast)}" />
-          |    <link href="../../podcast.css" rel="stylesheet" />
+          |    <link rel="alternate" type="application/rss+xml" title="${podcast.shortestTitle}" href="../../${layout.rssFeedPath(podcast)}" />
+          |    <link href="${layout.episodeBacklinkToRoot(podcast,episode).resolve("podcast.css")} rel="stylesheet" />
           |  </head>
           |  <body class="episode">
           |    <div class="contacts episode">
-          |       [<a href="${layout.rssFeedUrl(podcast)}">rss</a>]
+          |       [<a href="${layout.episodeBacklinkToRoot(podcast,episode).resolve(layout.rssFeedPath(podcast))}">rss</a>]
+          |       [<a href="${layout.episodeBacklinkToRoot(podcast,episode)}">home</a>]
           |    </div>
           |    <div class="coverimage episode">
-          |      ${layout.mbEpisodeImageUrl(podcast,episode).fold("")(u => "<img src=\"" + u + "\" />")}
+          |      ${layout.mbEpisodeImagePath(podcast,episode).fold("")(p => "<img src=\"" + p + "\" />")}
           |    </div>
           |    <h1 class="maintitle episode">${podcast.shortestTitle}: ${episode.title}</h1>
           |    ${episode.mbSubtitle.fold("")(st => "<h3 class=\"subtitle episode\">" + st + "</h3>")}
@@ -53,7 +54,7 @@ object Renderer:
           |    <div class="description episode">
           |    ${episode.description}
           |    </div>
-          |    <div class="audiolink"><a href="${layout.episodeAudioUrl(podcast,episode)}">[audio]</a></div>
+          |    <div class="audiolink"><a href="${layout.episodeAudioPath(podcast,episode)}">[audio]</a></div>
           |  </body>
           |</html>""".stripMargin
 
@@ -79,7 +80,7 @@ object Renderer:
           case _ : NumberFormatException => ""
       s"""
          |<li>
-         |  <p><b>${epiNumberOrEmpty}<a href="${layout.episodeUrl(podcast, episode)}">${episode.title}</a></b><p>
+         |  <p><b>${epiNumberOrEmpty}<a href="${layout.episodeRoot(podcast, episode)}">${episode.title}</a></b><p>
          |  ${episode.mbSummary.fold("")(summary =>"<p>" + summary + "</p>")}
          |</li>
          |""".stripMargin

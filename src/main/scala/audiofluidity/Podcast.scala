@@ -35,4 +35,7 @@ final case class Podcast(
   block                  : Boolean                        = false,                     // <itunes:block>
   complete               : Boolean                        = false,                     // <itunes:complete>
 ):
+  require(mainUrl.last == '/', s"mainUrl: '${mainUrl}' must end with /")
   def shortestTitle = mbShortTitle.getOrElse(title)
+
+

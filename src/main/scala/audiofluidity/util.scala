@@ -82,8 +82,10 @@ private def pathcat(a : String, b : String) : String =
     case (true,false) | (false,true) => a+b
     case (false,false)               => s"$a/$b"
 
-private def pathcat(s : String*) : String =
+private def _pathcat(s : String*) : String =
   s.foldLeft("")((last,next)=>pathcat(last,next))
+
+private def pathcat(elems : String | Path*) = _pathcat( elems.map(_.toString) : _*)
 
 def compileGenerator( fqcnPodcastGenerator : String, classPath : String, build : Build ) : PodcastGenerator =
   if !Files.exists(build.srcScalaDir) then throw new MissingScalaSourceDirectory(s"Can't find scala source at '${build.srcScalaDir}'")
@@ -147,23 +149,24 @@ end generate
 
 private def generateEpisode(build : Build, layout : Layout, renderer : Renderer, podcast: Podcast, episode : Episode ) : Unit =
   def root( path : Path ) = build.podcastgenDir.resolve(path)
-  val episodeRoot = root(layout.episodeRoot(podcast,episode))
-  Files.createDirectories(episodeRoot)
+  val episodeRootPath = root(layout.episodeRoot(podcast,episode))
+  def episodeRoot(path : Path) = episodeRootPath.resolve(path)
+  Files.createDirectories(episodeRootPath)
   val srcEpisodeAudioPath = build.srcEpisodeAudioFilePath(podcast,episode)
-  val destEpisodeAudioPath = root(layout.episodeAudioPath(podcast,episode))
+  val destEpisodeAudioPath = episodeRoot(layout.episodeAudioPath(podcast,episode))
   Files.createDirectories(destEpisodeAudioPath.getParent)
   Files.copy(srcEpisodeAudioPath, destEpisodeAudioPath, StandardCopyOption.REPLACE_EXISTING)
   for
-    srcEpisodeImagePath  <- layout.mbEpisodeImagePath(podcast, episode).map(root)
-    destEpisodeImagePath <- build.mbSrcEpisodeImageFilePath(podcast,episode).map(root)
+    srcEpisodeImagePath  <- build.mbSrcEpisodeImageFilePath(podcast,episode)
+    destEpisodeImagePath <- layout.mbEpisodeImagePath(podcast, episode).map(episodeRoot)
   yield
     Files.createDirectories(destEpisodeImagePath.getParent)
     Files.copy(srcEpisodeImagePath,destEpisodeImagePath)
-  val episodeIndexHtmlPath = root(layout.episodeHtmlPath(podcast,episode))
+  val episodeIndexHtmlPath = episodeRoot(layout.episodeHtmlPath(podcast,episode))
   val episodeIndexHtml = renderer.generateEpisodeHtml(build, layout, podcast, episode)
   Files.writeString(episodeIndexHtmlPath, episodeIndexHtml, scala.io.Codec.UTF8.charSet)
   val srcEpisodeRootPath = build.srcEpisodeRootDirPath(podcast,episode)
-  if Files.exists(srcEpisodeRootPath) then recursiveCopyDirectory(srcEpisodeRootPath,episodeRoot)
+  if Files.exists(srcEpisodeRootPath) then recursiveCopyDirectory(srcEpisodeRootPath,episodeRootPath)
 end generateEpisode
 
 private def recursiveCopyDirectory( srcRoot : Path, destRoot : Path ) =
@@ -212,7 +215,7 @@ end recursiveDeleteDirectory
 
 // expects directories already created
 private def fillInResources(resourceBase : Path, resources : immutable.Set[Path], destDir : Path, cl : ClassLoader, overwrite : Boolean = false ) : Unit =
-  resources.foreach( resource => fillInResource(resourceBase, resource, destDir, cl) )
+  resources.foreach( resource => fillInResource(resourceBase, resource, destDir, cl, overwrite) )
 
 // expects directories already created
 private def fillInResource(resourceBase : Path, resource : Path, destDir : Path, cl : ClassLoader, overwrite : Boolean = false ) : Unit =
@@ -229,14 +232,15 @@ private def fillInResource(resourceBase : Path, resource : Path, destDir : Path,
     destDir.resolve(xformResource)
   TRACE.log(s"Copying resource '${inPath}' to file '${outPath}'")
 
+  val copyOptions = if overwrite then StandardCopyOption.REPLACE_EXISTING :: Nil else Nil
   def doCopy() =
     val is = new BufferedInputStream(cl.getResourceAsStream(inPath.toString).ensuring(_ != null, s"Expected classloader resource '${inPath}' does not exist!"))
-    try Files.copy(is, outPath) finally is.close()
+    try Files.copy(is, outPath, copyOptions : _*) finally is.close()
 
   if Files.notExists(outPath) then
     doCopy()
-  else if (overwrite)
-    WARNING.log(s"File '${outPath}' exists already. Overwriting.")
+  else if overwrite then
+    INFO.log(s"File '${outPath}' exists already. Overwriting with classloader resource '${inPath}'.")
     doCopy()
   else
-    WARNING.log(s"File '${outPath}' exists already. Leaving as-is.")
+    WARNING.log(s"File '${outPath}' exists already. Leaving as-is, NOT overwriting with classloader resource '${inPath}'.")

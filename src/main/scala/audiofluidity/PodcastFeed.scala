@@ -23,13 +23,13 @@ object PodcastFeed:
     val sourceAudioFile = build.srcEpisodeAudioFilePath(podcast, episode).toFile
     if examineMedia && !sourceAudioFile.exists then throw new SourceMediaFileNotFound(s"Audio file '${sourceAudioFile}' not found.")
     val sourceAudioFileLength = if examineMedia then sourceAudioFile.length() else 0
-    val destinationAudioFileUrl = layout.episodeAudioUrl(podcast, episode)
+    val destinationAudioFileUrl = pathcat(podcast.mainUrl, layout.episodeRoot(podcast,episode), layout.episodeAudioPath(podcast, episode))
     val mbDurationInSeconds =
       if examineMedia && audioExtension == "mp3" then Some( mp3FileDurationInSeconds( sourceAudioFile ) ) else None
 
     val itemOut = Item(
       title       = Title(episode.title),
-      link        = Link(layout.episodeUrl(podcast,episode)),
+      link        = Link(pathcat(podcast.mainUrl, layout.episodeRoot(podcast,episode))),
       description = Description(episode.description),
       author      = Author(author),
       categories  = immutable.Seq.empty,
@@ -64,7 +64,7 @@ object PodcastFeed:
         build.mbSrcEpisodeImageFilePath(podcast, episode).flatMap { sourceImageFilePath =>
           val sourceImageFile = sourceImageFilePath.toFile
           if examineMedia && !sourceImageFile.exists then throw new SourceMediaFileNotFound(s"Image file '${sourceImageFile}' not found.")
-          layout.mbEpisodeImageUrl(podcast, episode).map( episodeImageUrl => Itunes.Image(episodeImageUrl) )
+          layout.mbEpisodeImagePath(podcast, episode).map( episodeImagePath => Itunes.Image(pathcat(podcast.mainUrl,layout.episodeRoot(podcast,episode), episodeImagePath)) )
         }
       }
 
@@ -92,7 +92,7 @@ object PodcastFeed:
     val title = Title(podcast.title)
     val link  = Link(podcast.mainUrl)
     val description = Description(podcast.description)
-    val imageUrl = layout.mainImageUrl(podcast)
+    val imageUrl = pathcat(podcast.mainUrl, layout.mainImagePath(podcast))
     val channelOut = Channel(
       title       = title,
       link        = link,
