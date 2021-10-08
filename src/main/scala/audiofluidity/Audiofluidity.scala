@@ -93,6 +93,7 @@ object Audiofluidity {
           val renderer = generator.renderer
           val podcast  = generator.podcast
           INFO.log(s"Adding renderer-defined documents to '${build.podcastgenDir}' directory before generation, if overriding documents are not already defined.")
+          Files.createDirectories(build.podcastgenDir)
           fillInResources(renderer.staticResourceBase, renderer.staticResources, build.podcastgenDir, cl, overwrite=true)
           INFO.log("Generating podcast website and RSS feed.")
           generate( build, layout, renderer, podcast )
