@@ -17,6 +17,7 @@ final case class Episode(
   explicit              : Boolean                 = false,                  // <itunes:explicit>
   keywords              : immutable.Seq[String]   = immutable.Seq.empty,    // <itunes:keywords>
   mbAuthorEmail         : Option[String]          = None,                   // defaults to podcast.defaultAuthorEmail if not set
+  mbExtraData           : Option[Any]             = None,
   mbSeasonNumber        : Option[Int]             = None,                   // <itunes:season>
   mbShortTitle          : Option[String]          = None,                   // <itunes:title>
   mbSourceImageFileName : Option[String]          = None,                   // <itunes:image>
