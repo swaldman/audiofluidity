@@ -35,3 +35,7 @@ class AudiofluidityGenerator extends PodcastGenerator.Base:
       mbPublisher         = Some(???),                        //Option[String], not mandatory as RSS, but strongly recommended by Apple Podcast
       episodes            = episodes
     )
+
+  // Optionally uncomment and customize the preparsedCommand if you wish audiofluidity to deploy for you.
+  val deployer = new Deployer.Exec(/* preparsedCommand = immutable.Seq("rsync", "-av", ".", "user@host:/web/server/root") */)
+

@@ -9,3 +9,4 @@ trait PodcastGenerator:
   def layout   : Layout
   def podcast  : Podcast
   def renderer : Renderer
+  def deployer : Deployer

@@ -82,36 +82,49 @@ object Audiofluidity {
 
     val cl = this.getClass.getClassLoader
 
+    def doInit =
+      ensureConfigDirConsistentWithBuild( baseDirPath, build, init=true )
+      build.initDirs()
+      fillInResources(build.buildResourceBase, build.buildResources, build.baseDir, cl)
+      INFO.log("Podcast template initialized.")
+
+    def doClean =
+      ensureConfigDirConsistentWithBuild( baseDirPath, build )
+      recursiveDeleteDirectory(build.tmpDir, leaveTop = true)
+      recursiveDeleteDirectory(build.podcastgenDir, leaveTop = true)
+      INFO.log(s"Distribution cleaned ('${build.tmpDir}' and '${build.podcastgenDir}' cleared.)")
+
+    def doGenerate(deploy : Boolean) =
+      ensureConfigDirConsistentWithBuild( baseDirPath, build )
+      val generator = buildPodcastGenerator()
+      val layout   = generator.layout
+      val renderer = generator.renderer
+      val podcast  = generator.podcast
+      INFO.log(s"Adding renderer-defined documents to '${build.srcStaticDir}' directory before generation, if overriding documents are not already defined.")
+      fillInResources(renderer.staticResourceBase, renderer.staticResources, build.srcStaticDir, cl)
+      INFO.log("Generating podcast website and RSS feed.")
+      generate( build, layout, renderer, podcast )
+      INFO.log(s"Successfully generated podcast '${podcast.title}'" + (if deploy then ", will now deploy." else "."))
+      if (deploy)
+        INFO.log(s"Deploying generated podcast from '${build.podcastgenDir}'")
+        generator.deployer.deploy(build)
+        INFO.log("Deployment complete.")
+
     if args.nonEmpty then
       val command = args.head
       command match
-        case "init" =>
-          ensureConfigDirConsistentWithBuild( baseDirPath, build, init=true )
-          build.initDirs()
-          fillInResources(build.buildResourceBase, build.buildResources, build.baseDir, cl)
-          println("Podcast template initialized.")
-        case "clean" =>
-          ensureConfigDirConsistentWithBuild( baseDirPath, build )
-          recursiveDeleteDirectory(build.tmpDir, leaveTop = true)
-          recursiveDeleteDirectory(build.podcastgenDir, leaveTop = true)
-        case "generate" =>
-          ensureConfigDirConsistentWithBuild( baseDirPath, build )
-          val generator = buildPodcastGenerator()
-          val layout   = generator.layout
-          val renderer = generator.renderer
-          val podcast  = generator.podcast
-          INFO.log(s"Adding renderer-defined documents to '${build.srcStaticDir}' directory before generation, if overriding documents are not already defined.")
-          fillInResources(renderer.staticResourceBase, renderer.staticResources, build.srcStaticDir, cl)
-          INFO.log("Generating podcast website and RSS feed.")
-          generate( build, layout, renderer, podcast )
-          INFO.log(s"Successfully generated podcast '${podcast.title}'.")
-        case _ => usage()
+        case "init"     => doInit
+        case "clean"    => doClean
+        case "generate" => doGenerate(false)
+        case "deploy"   => doGenerate(true)
+        case _          => usage()
     else usage()
 
   def usage() : Unit =
     println("Usage: audiocity <command>")
     println("Commands:")
     println("  clean    -- Deletes generated artifacts from build directory (usually the current working directory)")
+    println("  deploy   -- Compiles and generates a configured podcast, and deploys it if deployment is configured")
     println("  generate -- Compiles and generates a configured podcast")
     println("  init     -- Creates template for a podcast in the build directory (usually the current working directory)")
 }
