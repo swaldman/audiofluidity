@@ -1,6 +1,9 @@
 package audiofluidity
 
 import java.nio.file.Path
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoField
 import scala.collection.*
 
 // I'd really rather use ScalaTags, but they're not available yet for Scala 3
@@ -31,9 +34,23 @@ object Renderer:
           |    <ul class="episodelist">
           |      ${podcast.episodes.map(episodeListElement(layout,podcast,_)).mkString("\n")}
           |    </ul>
+          |    <hr class="belowepisodelist podcast"/>
+          |    <div class="endcredits">
+          |    ${podcast.mbPublisher.fold("")(p => s"<p class=\"publishedby\">Published by ${p}.</p>")}
+          |    ${podcast.mbAdmin.fold("")(admin => s"<p class=\"admin\">Administrative contact: <a href=\"mailto:${admin.email}\">${admin.name}</a></p>")}
+          |    ${podcast.mbCopyrightHolder.fold("")(holder => "<p class=\"copyright\">&copy; " + ZonedDateTime.now.getYear + " " + holder + "</p>")}
+          |    </div>
           |  </body>
           |</html>""".stripMargin
     def generateEpisodeHtml( build : Build, layout : Layout, podcast: Podcast, episode : Episode ) : String =
+      val when = episode.zonedDateTime(podcast.zoneId)
+
+      extension (p : Path)
+        def suffix : Option[String] =
+          val fn = p.getFileName.toString
+          val lastDot = fn.lastIndexOf('.')
+          if lastDot <= 0 || lastDot == fn.length-1 then None else Some(fn.substring(lastDot+1))
+
       s"""|<html>
           |  <head>
           |    <title>${podcast.shortestTitle}: ${episodeSequencePfx(episode)} ${episode.shortestTitle}</title>
@@ -54,7 +71,11 @@ object Renderer:
           |    <div class="description episode">
           |    ${episode.description}
           |    </div>
-          |    <div class="audiolink"><a href="${layout.episodeAudioPath(podcast,episode)}">[audio]</a></div>
+          |    <div class="audiolink">Episode audio: [<a href="${layout.episodeAudioPath(podcast,episode)}">${layout.episodeAudioPath(podcast,episode).suffix.getOrElse("???")}</a>]</div>
+          |    <hr class="belowdescription episode"/>
+          |    ${episode.mbAuthorEmail.fold("")(email => s"<p class="author"">Author: <a href=\"mailto:${email}\">${email}</a></p>")}
+          |    <p class="publishedwhen">Published ${when.format(DateTimeFormatter.RFC_1123_DATE_TIME)}.</p>
+          |    ${podcast.mbCopyrightHolder.fold("")(holder => "<p class="copyright">&copy; " + when.getYear + " " + holder + "</p>")}</p>
           |  </body>
           |</html>""".stripMargin
 
