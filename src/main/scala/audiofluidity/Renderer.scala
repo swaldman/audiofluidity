@@ -73,9 +73,9 @@ object Renderer:
           |    </div>
           |    <div class="audiolink">Episode audio: [<a href="${layout.episodeAudioPath(podcast,episode)}">${layout.episodeAudioPath(podcast,episode).suffix.getOrElse("???")}</a>]</div>
           |    <hr class="belowdescription episode"/>
-          |    ${episode.mbAuthorEmail.fold("")(email => s"<p class="author"">Author: <a href=\"mailto:${email}\">${email}</a></p>")}
+          |    ${episode.mbAuthorEmail.fold("")(email => s"<p class=\"author\">Author: <a href=\"mailto:${email}\">${email}</a></p>")}
           |    <p class="publishedwhen">Published ${when.format(DateTimeFormatter.RFC_1123_DATE_TIME)}.</p>
-          |    ${podcast.mbCopyrightHolder.fold("")(holder => "<p class="copyright">&copy; " + when.getYear + " " + holder + "</p>")}</p>
+          |    ${podcast.mbCopyrightHolder.fold("")(holder => "<p class=\"copyright\">&copy; " + when.getYear + " " + holder + "</p>")}</p>
           |  </body>
           |</html>""".stripMargin
 
