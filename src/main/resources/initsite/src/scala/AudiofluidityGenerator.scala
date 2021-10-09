@@ -29,5 +29,9 @@ class AudiofluidityGenerator extends PodcastGenerator.Base:
       mainImageFileName   = ???, // String
       editorEmail         = ???, // String
       defaultAuthorEmail  = ???, // String
+      itunesCategories    = immutable.Seq( ??? ),             //immutable.Seq[ItunesCategory], ??? is one or several ItunesCategory values, only first was is used, not mandatory as RSS, but strongly recommended by Apple Podcast
+      mbAdmin             = Some(Admin(name=???, email=???)), //Option[Admin], ??? are Strings, not mandatory as RSS, but strongly recommended by Apple Podcast
+      mbLanguage          = Some(???),                        //Option[LanguageCode], not mandatory as RSS, but strongly recommended by Apple Podcast
+      mbPublisher         = Some(???),                        //Option[String], not mandatory as RSS, but strongly recommended by Apple Podcast
       episodes            = episodes
     )

@@ -80,7 +80,7 @@ object Renderer:
           case _ : NumberFormatException => ""
       s"""
          |<li>
-         |  <p><b>${epiNumberOrEmpty}<a href="${layout.episodeRoot(podcast, episode)}">${episode.title}</a></b><p>
+         |  <p><b><span class="episodenumber">${epiNumberOrEmpty}</span><a href="${layout.episodeRoot(podcast, episode)}">${episode.title}</a></b> [<a href="${layout.episodeRoot(podcast,episode).resolve(layout.episodeAudioPath(podcast,episode))}">audio</a>] <span class="pubdate">${episode.publicationDate}</span><p>
          |  ${episode.mbSummary.fold("")(summary =>"<p>" + summary + "</p>")}
          |</li>
          |""".stripMargin

@@ -25,7 +25,7 @@ final case class Podcast(
   mbExtraData            : Option[Any]                    = None,
   mbCopyrightHolder      : Option[String]                 = None,
   mbNewFeedUrl           : Option[String]                 = None,                      // <itunes:new-feed-url>
-  mbPublisherEmail       : Option[String]                 = None,                      // <itunes:author>
+  mbPublisher            : Option[String]                 = None,                      // <itunes:author>
   mbShortTitle           : Option[String]                 = None,                      // <itunes:title>
   mbSubtitle             : Option[String]                 = None,                      // <itunes:subtitle>
   mbSummary              : Option[String]                 = None,                      // <itunes:summary>

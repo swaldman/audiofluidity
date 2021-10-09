@@ -109,7 +109,7 @@ object PodcastFeed:
       itunesCategories   = podcast.itunesCategories,
       itunesImage        = Itunes.Image(imageUrl),
       itunesExplicit     = Itunes.Explicit(podcast.explicit),
-      mbItunesAuthor     = podcast.mbPublisherEmail.map(email => Itunes.Author(email)),
+      mbItunesAuthor     = podcast.mbPublisher.map(fullName => Itunes.Author(fullName)),
       mbItunesBlock      = if podcast.block then Some(Itunes.Block) else None,
       mbItunesComplete   = if podcast.complete then Some(Itunes.Complete) else None,
       mbItunesKeywords   = if (podcast.keywords.nonEmpty) Some(Itunes.Keywords(podcast.keywords)) else None,
@@ -125,7 +125,8 @@ object PodcastFeed:
   end channel  
 
   def apply(build : Build, layout : Layout, podcast : Podcast, examineMedia : Boolean = true) : PodcastFeed =
-    val itemItemDs = podcast.episodes.map(e => item(build, layout, podcast, e, examineMedia) )
+    val reverseChronologicalEpisodes = podcast.episodes.sortBy( episode => Tuple2(episode.zonedDateTime(podcast.zoneId),System.identityHashCode(episode)) )(summon[Ordering[Tuple2[ZonedDateTime,Int]]].reverse)
+    val itemItemDs = reverseChronologicalEpisodes.map(e => item(build, layout, podcast, e, examineMedia) )
     val items = itemItemDs.map( _._1 )
     val (channelIn, channelD) = channel(build, layout, podcast, items)
     val itemDsMap = itemItemDs.map { case (item, itemD) => (item.guid.get.id, itemD)}.toMap // we always create <guid> elements, so get should always succeed

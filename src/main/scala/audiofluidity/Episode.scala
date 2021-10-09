@@ -26,5 +26,6 @@ final case class Episode(
   mbZoneId              : Option[ZoneId]          = None                    // defaults to parent.defaultZoneId
 ):
   def shortestTitle = mbShortTitle.getOrElse(title)
+  def zonedDateTime(podcastZoneId : ZoneId) = audiofluidity.zonedDateTime(publicationDate, publicationTime, mbZoneId.getOrElse(podcastZoneId))
 
 

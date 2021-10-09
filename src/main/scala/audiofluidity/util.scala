@@ -34,6 +34,8 @@ private def zonedDateTime( dateString : String, timeString : String, zoneId : Zo
 private def mp3FileDurationInSeconds( f : File ) : Long =
   import com.mpatric.mp3agic.Mp3File
   val mp3file = new Mp3File(f)
+  if !mp3file.hasId3v2Tag() then
+    WARNING.log(s"Audio (mp3) file '${f.getName}' lacks recommended ID3v2 tagging.")
   mp3file.getLengthInSeconds()   
 
 private def uniqueChildElem(node : Node, elemName : String) : Elem =

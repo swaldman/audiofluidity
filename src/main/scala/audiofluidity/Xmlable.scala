@@ -118,7 +118,7 @@ object Xmlable:
   // Apple-specific elements
   private def ielem(label : String, attributes1 : MetaData, children : Node*) : Elem =
     new Elem(prefix="itunes", label=label, attributes1=attributes1, scope=TopScope, minimizeEmpty=true, children : _*)
-  private def ielem(label : String, children : Node*) : Elem = elem(label, Null, children : _*)
+  private def ielem(label : String, children : Node*) : Elem = ielem(label, Null, children : _*)
 
   given given_Xmlable_Itunes_Author : Xmlable[Itunes.Author] with
     extension(x : Itunes.Author) def toElem : Elem = ielem("author", new Text(x.fullName))

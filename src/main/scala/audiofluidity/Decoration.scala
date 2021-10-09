@@ -31,7 +31,7 @@ object Decoration:
         val newElems =
           (itunesCategories.map( _.toElem ) :+ itunesImage.toElem :+ itunesExplicit.toElem) ++
            enc(mbItunesAuthor) ++ enc(mbItunesBlock) ++ enc(mbItunesComplete) ++ enc(mbItunesKeywords) ++ enc(mbItunesNewFeedUrl) ++ enc(mbItunesOwner) ++ enc(mbItunesSummary) ++ enc(mbItunesTitle)
-        channelElem.copy( child = channelElem.child ++ newElems )              
+        channelElem.copy( child = channelElem.child ++ newElems )
   end Channel
 
   case class Item (
