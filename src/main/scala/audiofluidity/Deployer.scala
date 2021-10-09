@@ -18,7 +18,7 @@ object Deployer:
   class Exec( preparsedCommand : immutable.Seq[String] = Nil) extends Deployer:
     def deploy( build : Build ) : Unit =
       if preparsedCommand == Nil then throw new DeployerNotConfiguredException("No parsed command has been supplied to the deployer (of type Deployer.Exec)")
-      val ppcStr =  preparsedCommand.mkString(", ")
+      val ppcStr =  preparsedCommand.mkString("\"","\", \"","\"")
       val cwd = build.podcastgenDir
       if !Files.exists(cwd) || !Files.isDirectory(cwd) then throw new AudiofluidityException(s"No directory '${cwd}' exists from which to deploy a generated podcast.")
       INFO.log("Executing preparsed deployment command: " + ppcStr)

@@ -9,10 +9,9 @@ import java.nio.file.{FileVisitResult, Files, LinkOption, Path, SimpleFileVisito
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
+import java.time.format.DateTimeFormatter.{RFC_1123_DATE_TIME, parsedLeapSecond}
 import java.util.Locale
 import dotty.tools.dotc
-
 import com.mchange.sc.v1.log.MLogger
 import com.mchange.sc.v1.log.MLevel.*
 
@@ -157,13 +156,13 @@ private def generateEpisode(build : Build, layout : Layout, renderer : Renderer,
   val srcEpisodeAudioPath = build.srcEpisodeAudioFilePath(podcast,episode)
   val destEpisodeAudioPath = episodeRoot(layout.episodeAudioPath(podcast,episode))
   Files.createDirectories(destEpisodeAudioPath.getParent)
-  Files.copy(srcEpisodeAudioPath, destEpisodeAudioPath, StandardCopyOption.REPLACE_EXISTING)
+  copyFile(srcEpisodeAudioPath, destEpisodeAudioPath)
   for
     srcEpisodeImagePath  <- build.mbSrcEpisodeImageFilePath(podcast,episode)
     destEpisodeImagePath <- layout.mbEpisodeImagePath(podcast, episode).map(episodeRoot)
   yield
     Files.createDirectories(destEpisodeImagePath.getParent)
-    Files.copy(srcEpisodeImagePath,destEpisodeImagePath)
+    copyFile(srcEpisodeImagePath,destEpisodeImagePath)
   val episodeIndexHtmlPath = episodeRoot(layout.episodeHtmlPath(podcast,episode))
   val episodeIndexHtml = renderer.generateEpisodeHtml(build, layout, podcast, episode)
   Files.writeString(episodeIndexHtmlPath, episodeIndexHtml, scala.io.Codec.UTF8.charSet)
@@ -171,7 +170,13 @@ private def generateEpisode(build : Build, layout : Layout, renderer : Renderer,
   if Files.exists(srcEpisodeRootPath) then recursiveCopyDirectory(srcEpisodeRootPath,episodeRootPath)
 end generateEpisode
 
-private def recursiveCopyDirectory( srcRoot : Path, destRoot : Path ) =
+private def copyFile(file : Path, destFile : Path, overwriteNewer : Boolean = false) =
+  if overwriteNewer || Files.notExists(destFile) || Files.getLastModifiedTime(destFile).compareTo(Files.getLastModifiedTime(file)) < 0 then
+    Files.copy(file, destFile, StandardCopyOption.REPLACE_EXISTING)
+  else
+    INFO.log(s"Skipping copy of '${file.getFileName}' as destination is newer.")
+
+private def recursiveCopyDirectory( srcRoot : Path, destRoot : Path, overwriteNewer : Boolean = false ) =
   val absSrcRoot = srcRoot.toAbsolutePath
   val absDestRoot = destRoot.toAbsolutePath
 
@@ -185,7 +190,8 @@ private def recursiveCopyDirectory( srcRoot : Path, destRoot : Path ) =
       FileVisitResult.CONTINUE
 
     override def visitFile(file : Path, attrs : BasicFileAttributes) : FileVisitResult =
-      Files.copy(file, destDirPath(file), StandardCopyOption.REPLACE_EXISTING)
+      val destFile = destDirPath(file)
+      copyFile(file, destFile, overwriteNewer)
       FileVisitResult.CONTINUE
 
   Files.walkFileTree(absSrcRoot, visitor)
