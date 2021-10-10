@@ -101,6 +101,7 @@ object PodcastFeed:
       image       = Some(Image(url=Url(imageUrl), title=title, link=link, description=Some(description), width=None, height=None)),
       language    = podcast.mbLanguage.map(lc => Language(lc)),
       copyright   = podcast.mbCopyrightHolder.map(holder => Copyright(notice=s"\u00A9${zdtNow.getYear} ${holder}")),
+      webMaster   = podcast.mbAdmin.map { case Admin(name, email) => WebMaster(email=email) },
       generator   = Some( Generator(DefaultGenerator) ),
       items       = items
     )

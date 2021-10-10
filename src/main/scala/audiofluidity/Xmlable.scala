@@ -110,8 +110,8 @@ object Xmlable:
     extension(x : Ttl) def toElem : Elem = elem("ttl", new Text(x.minutes.toString))
   given Xmlable[Url] with
     extension(x : Url) def toElem : Elem = elem("url", new Text(x.location))
-  given Xmlable[Webmaster] with
-    extension(x : Webmaster) def toElem : Elem = elem("webmaster", new Text(x.email))
+  given Xmlable[WebMaster] with
+    extension(x : WebMaster) def toElem : Elem = elem("webMaster", new Text(x.email))
   given Xmlable[Width] with
     extension(x : Width) def toElem : Elem = elem("width", new Text(x.pixels.toString))
 

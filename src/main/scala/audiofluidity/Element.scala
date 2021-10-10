@@ -19,7 +19,7 @@ object Element:
         language       : Option[Language] = None,
         copyright      : Option[Copyright] = None,
         managingEditor : Option[ManagingEditor] = None,
-        webMaster      : Option[Webmaster] = None,
+        webMaster      : Option[WebMaster] = None,
         pubDate        : Option[PubDate] = None,
         lastBuildDate  : Option[LastBuildDate] = None,
         categories     : immutable.Seq[Category] = immutable.Seq.empty,
@@ -73,7 +73,7 @@ object Element:
     case class Title(text : String)
     case class Ttl(minutes : Int)
     case class Url(location : String)
-    case class Webmaster(email : String)
+    case class WebMaster(email : String)
     case class Width(pixels : Int)
 
     object Itunes:

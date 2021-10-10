@@ -21,7 +21,7 @@ final case class Podcast(
   itunesCategories       : immutable.Seq[Itunes.Category] = immutable.Seq.empty,
   zoneId                 : ZoneId                         = ZoneId.of("US/Pacific"),
   mbLanguage             : Option[LanguageCode]           = None,
-  mbAdmin                : Option[Admin]                  = None,                      // <itunes:owner> and <webmaster>
+  mbAdmin                : Option[Admin]                  = None,                      // <itunes:owner> and <webMaster>
   mbExtraData            : Option[Any]                    = None,
   mbCopyrightHolder      : Option[String]                 = None,
   mbNewFeedUrl           : Option[String]                 = None,                      // <itunes:new-feed-url>
