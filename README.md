@@ -14,6 +14,7 @@ A simple Scala-cenric static site generator for podcasts
     * [Customizing your podcast website](#customizing-your-podcast-website)
     * [Deploying your podcast](#deploying-your-podcast)
     * [Testing and submitting your podcast](#testing-and-submitting-your-podcast)
+    * [Updating your podcast](#updating-your-podcast)
   * [Example podcast](#example-podcast)
   * [Developer Resources](#developer-resources)
       * [Podcast RSS](#podcast-rss)
@@ -373,6 +374,14 @@ Users of apps that accept podcast RSS feed URLs will immediately be able to subs
 
 When your feed validates, follow the directions under [Submit an RSS feed](https://podcasters.apple.com/support/897-submit-a-show) to get your podcast into Apple Podcasts.
 See also [Spotify](https://podcasters.spotify.com/) and [Google](https://support.google.com/podcast-publishers/answer/10315648).
+
+### Updating your podcast
+
+For every new episode, you'll need to add an mp3 file, then update the episode list in `AudiofluidityGenerator.scala` with information about the new episode.
+You can also modify or update other information in that file, at the podcast level or from previous episodes.
+
+Then just run `audiofluidity generate` and upload the `podcastgen` directory to your server (or better yet, if you've configured it, just run `audiofluidity deploy`) and your
+podcast will be updated.
 
 ## Example podcast
 
