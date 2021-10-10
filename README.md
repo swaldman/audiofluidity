@@ -2,15 +2,11 @@
 
 A simple Scala-cenric static site generator for podcasts
 
-Table of Contents
-=================
-
-* [Audiofluidity](#audiofluidity)
   * [Getting Started](#getting-started)
     * [Prerequisites](#prerequisites)
     * [Initialize a project directory](#initialize-a-project-directory)
     * [Supply initial resources](#supply-initial-resources)
-    * [Define our PodcastGenerator](#define-our-podcastgenerator)
+    * [Define the PodcastGenerator](#define-the-podcastgenerator)
       * [Podcast\-level values](#podcast-level-values)
       * [Episode\-level values](#episode-level-values)
       * [Putting it all together](#putting-it-all-together)
@@ -86,7 +82,7 @@ $ cp ~/somewhere/some-cover-art.jpg ./src/coverimage/
 $ cp ~/somewhere/something.mp3 ./src/audio
 ```
 
-### Define our PodcastGenerator
+### Define the PodcastGenerator
 
 You have to supply a fair amount of information to generate a podcast in the style Apple and other podcast indexers now expect. With `audiofluidity`, this information is defined in Scala.
 
