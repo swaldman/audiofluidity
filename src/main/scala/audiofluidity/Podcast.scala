@@ -14,7 +14,7 @@ final case class Podcast(
   description            : String,
   guidPrefix             : String,
   shortOpaqueName        : String, // to be incorporated in generated filenames
-  mainImageFileName      : String,
+  mainCoverImageFileName : String,
   editorEmail            : String, // managingEditor
   defaultAuthorEmail     : String,
   episodes               : immutable.Seq[Episode],

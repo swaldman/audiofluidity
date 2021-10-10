@@ -58,7 +58,7 @@ object PodcastFeed:
     val mbItunesBlock    = if episode.block then Some(Itunes.Block) else None
 
     val mbItunesImage =
-      episode.mbSourceImageFileName.flatMap { sourceImageFileName =>
+      episode.mbCoverImageFileName.flatMap { sourceImageFileName =>
         val imageExtension = mediaFileExtension( sourceImageFileName )
         ensureSupportedImageExtension(imageExtension)
         build.mbSrcEpisodeCoverImageFilePath(podcast, episode).flatMap { sourceImageFilePath =>

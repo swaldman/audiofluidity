@@ -17,10 +17,10 @@ final case class Episode(
   explicit              : Boolean                 = false,                  // <itunes:explicit>
   keywords              : immutable.Seq[String]   = immutable.Seq.empty,    // <itunes:keywords>
   mbAuthorEmail         : Option[String]          = None,                   // defaults to podcast.defaultAuthorEmail if not set
+  mbCoverImageFileName  : Option[String]          = None,                   // <itunes:image>
   mbExtraData           : Option[Any]             = None,
   mbSeasonNumber        : Option[Int]             = None,                   // <itunes:season>
   mbShortTitle          : Option[String]          = None,                   // <itunes:title>
-  mbSourceImageFileName : Option[String]          = None,                   // <itunes:image>
   mbSubtitle            : Option[String]          = None,                   // <itunes:subtitle>
   mbSummary             : Option[String]          = None,                   // <itunes:summary>
   mbZoneId              : Option[ZoneId]          = None                    // defaults to parent.defaultZoneId

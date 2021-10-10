@@ -51,12 +51,12 @@ private def audioFileExtension(episode : Episode) : String = mediaFileExtension(
 
 private def episodeAudioSourceFilePath( build : Build, podcast : Podcast, episode : Episode ) : Path = build.srcAudioDir.resolve(episode.sourceAudioFileName)
 
-private def mbEpisodeImageFileExtension(episode : Episode) : Option[String] = episode.mbSourceImageFileName.map(mediaFileExtension).map(ensureSupportedImageExtension)
+private def mbEpisodeImageFileExtension(episode : Episode) : Option[String] = episode.mbCoverImageFileName.map(mediaFileExtension).map(ensureSupportedImageExtension)
 
 private def mbEpisodeImageSourceFilePath( build : Build, podcast : Podcast, episode : Episode) : Option[Path] =
-  episode.mbSourceImageFileName.map(sourceImageFileName => build.srcAudioDir.resolve(sourceImageFileName))
+  episode.mbCoverImageFileName.map(sourceImageFileName => build.srcAudioDir.resolve(sourceImageFileName))
 
-private def mainImageFileExtension(podcast : Podcast) : String = ensureSupportedImageExtension( mediaFileExtension(podcast.mainImageFileName) )
+private def mainImageFileExtension(podcast : Podcast) : String = ensureSupportedImageExtension( mediaFileExtension(podcast.mainCoverImageFileName) )
 
 
 private def mimeTypeForSupportedAudioFileExtension(extension : String) : String =
