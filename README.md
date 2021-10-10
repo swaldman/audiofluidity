@@ -389,6 +389,8 @@ _audiofluidity_ is very fresh software, But you can see a test site (not yet sub
 
 You can subscribe to the podcast with apps that accept Podcast RSS feeds.
 
+You can check out its [_audiofluidity_ project on github](https://github.com/swaldman/scratch.audiofluidity.com).
+
 ## Developer Resources
 
 #### Podcast RSS
