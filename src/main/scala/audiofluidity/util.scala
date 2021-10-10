@@ -136,8 +136,8 @@ def generate(build : Build, layout : Layout, renderer : Renderer, podcast : Podc
   val feedParent = feedPath.getParent()
   Files.createDirectories(feedParent)
   Files.writeString(feedPath,podcastFeed.asXmlText, scala.io.Codec.UTF8.charSet)
-  val srcMainImageFilePath = build.srcMainImageFilePath(podcast)
-  val destMainImagePath = build.podcastgenDir.resolve(layout.mainImagePath(podcast))
+  val srcMainImageFilePath = build.srcMainCoverImageFilePath(podcast)
+  val destMainImagePath = build.podcastgenDir.resolve(layout.mainCoverImagePath(podcast))
   Files.createDirectories(destMainImagePath.getParent)
   Files.copy(srcMainImageFilePath, destMainImagePath, StandardCopyOption.REPLACE_EXISTING)
   val destMainHtmlPath = build.podcastgenDir.resolve(layout.mainHtmlPath(podcast))
@@ -158,8 +158,8 @@ private def generateEpisode(build : Build, layout : Layout, renderer : Renderer,
   Files.createDirectories(destEpisodeAudioPath.getParent)
   copyFile(srcEpisodeAudioPath, destEpisodeAudioPath)
   for
-    srcEpisodeImagePath  <- build.mbSrcEpisodeImageFilePath(podcast,episode)
-    destEpisodeImagePath <- layout.mbEpisodeImagePath(podcast, episode).map(episodeRoot)
+    srcEpisodeImagePath  <- build.mbSrcEpisodeCoverImageFilePath(podcast,episode)
+    destEpisodeImagePath <- layout.mbEpisodeCoverImagePath(podcast, episode).map(episodeRoot)
   yield
     Files.createDirectories(destEpisodeImagePath.getParent)
     copyFile(srcEpisodeImagePath,destEpisodeImagePath)

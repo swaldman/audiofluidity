@@ -22,7 +22,7 @@ object Renderer:
           |       [<a href="${layout.rssFeedPath(podcast)}">rss</a>]
           |    </div>
           |    <div class="coverimage podcast">
-          |      <img src="${layout.mainImagePath(podcast)}" />
+          |      <img src="${layout.mainCoverImagePath(podcast)}" />
           |    </div>
           |    <h1 class="maintitle podcast">${podcast.title}</h1>
           |    ${podcast.mbSubtitle.fold("")(st => "<h3 class=\"subtitle podcast\">" + st + "</h3>")}
@@ -63,7 +63,7 @@ object Renderer:
           |       [<a href="${layout.episodeBacklinkToRoot(podcast,episode)}">home</a>]
           |    </div>
           |    <div class="coverimage episode">
-          |      ${layout.mbEpisodeImagePath(podcast,episode).fold("")(p => "<img src=\"" + p + "\" />")}
+          |      ${layout.mbEpisodeCoverImagePath(podcast,episode).fold("")(p => "<img src=\"" + p + "\" />")}
           |    </div>
           |    <h1 class="maintitle episode">${podcast.shortestTitle}: ${episode.title}</h1>
           |    ${episode.mbSubtitle.fold("")(st => "<h3 class=\"subtitle episode\">" + st + "</h3>")}

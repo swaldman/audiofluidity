@@ -61,10 +61,10 @@ object PodcastFeed:
       episode.mbSourceImageFileName.flatMap { sourceImageFileName =>
         val imageExtension = mediaFileExtension( sourceImageFileName )
         ensureSupportedImageExtension(imageExtension)
-        build.mbSrcEpisodeImageFilePath(podcast, episode).flatMap { sourceImageFilePath =>
+        build.mbSrcEpisodeCoverImageFilePath(podcast, episode).flatMap { sourceImageFilePath =>
           val sourceImageFile = sourceImageFilePath.toFile
           if examineMedia && !sourceImageFile.exists then throw new SourceMediaFileNotFound(s"Image file '${sourceImageFile}' not found.")
-          layout.mbEpisodeImagePath(podcast, episode).map( episodeImagePath => Itunes.Image(pathcat(podcast.mainUrl,layout.episodeRoot(podcast,episode), episodeImagePath)) )
+          layout.mbEpisodeCoverImagePath(podcast, episode).map( episodeImagePath => Itunes.Image(pathcat(podcast.mainUrl,layout.episodeRoot(podcast,episode), episodeImagePath)) )
         }
       }
 
@@ -92,7 +92,7 @@ object PodcastFeed:
     val title = Title(podcast.title)
     val link  = Link(podcast.mainUrl)
     val description = Description(podcast.description)
-    val imageUrl = pathcat(podcast.mainUrl, layout.mainImagePath(podcast))
+    val imageUrl = pathcat(podcast.mainUrl, layout.mainCoverImagePath(podcast))
     val channelOut = Channel(
       title       = title,
       link        = link,

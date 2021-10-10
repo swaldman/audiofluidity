@@ -12,7 +12,7 @@ class Build(
   srcStaticDirName        : String, // relative to srcDir, static resources
   srcAudioDirName         : String, // relative to srcDir
   srcEpisodeRootName      : String, // relative to srcDir, contains folders of static resources named by episode UID
-  srcImageDirName         : String, // relative to srcDir
+  srcCoverImageDirName    : String, // relative to srcDir
   libDirName              : String, // relative to baseDir
   tmpDirName              : String, // relative to baseDir
   tmpClassesDirName       : String, // relative to tmpDir
@@ -21,17 +21,17 @@ class Build(
 ):
   def this( baseDir : Path ) = this(
     baseDir,
-    srcDirName         = "src",             // relative to baseDir
-    srcScalaDirName    = "scala",           // relative to srcDir
-    srcStaticDirName   = "docroot",         // relative to srcDir, static resources
-    srcAudioDirName    = "audio",           // relative to srcDir
-    srcEpisodeRootName = "episoderoot",     // relative to srcDir, contains folders of static resources named by episode UID
-    srcImageDirName    = "image",           // relative to srcDir
-    libDirName         = "lib",             // relative to baseDir
-    tmpDirName         = "tmp",             // relative to baseDir
-    tmpClassesDirName  = "classes",         // relative to tmpDir
-    tmpStaticDirName   = "docroot",         // relative to tmpDir
-    podcastgenDirName  = "podcastgen",      // relative to baseDir
+    srcDirName           = "src",             // relative to baseDir
+    srcScalaDirName      = "scala",           // relative to srcDir
+    srcStaticDirName     = "docroot",         // relative to srcDir, static resources
+    srcAudioDirName      = "audio",           // relative to srcDir
+    srcEpisodeRootName   = "episoderoot",     // relative to srcDir, contains folders of static resources named by episode UID
+    srcCoverImageDirName = "coverimage",           // relative to srcDir
+    libDirName           = "lib",             // relative to baseDir
+    tmpDirName           = "tmp",             // relative to baseDir
+    tmpClassesDirName    = "classes",         // relative to tmpDir
+    tmpStaticDirName     = "docroot",         // relative to tmpDir
+    podcastgenDirName    = "podcastgen",      // relative to baseDir
   )
 
   val srcDir              = baseDir.resolve(srcDirName)
@@ -39,16 +39,16 @@ class Build(
   val srcStaticDir        = srcDir.resolve(srcStaticDirName)
   val srcAudioDir         = srcDir.resolve(srcAudioDirName)
   val srcEpisodeRootDir   = srcDir.resolve(srcEpisodeRootName)
-  val srcImageDir         = srcDir.resolve(srcImageDirName)
+  val srcCoverImageDir    = srcDir.resolve(srcCoverImageDirName)
   val libDir              = baseDir.resolve(libDirName)
   val tmpDir              = baseDir.resolve(tmpDirName)
   val tmpClassesDir       = tmpDir.resolve(tmpClassesDirName)
   val podcastgenDir       = baseDir.resolve(podcastgenDirName)
 
-  def srcMainImageFilePath(podcast : Podcast)                         : Path         = srcImageDir.resolve(podcast.mainImageFileName)
-  def srcEpisodeAudioFilePath(podcast : Podcast, episode : Episode)   : Path         = srcAudioDir.resolve(episode.sourceAudioFileName)
-  def srcEpisodeRootDirPath(podcast : Podcast, episode : Episode)     : Path         = srcEpisodeRootDir.resolve(episode.uid)
-  def mbSrcEpisodeImageFilePath(podcast : Podcast, episode : Episode) : Option[Path] = episode.mbSourceImageFileName.map( sifn => srcAudioDir.resolve(sifn) )
+  def srcMainCoverImageFilePath(podcast : Podcast)                         : Path         = srcCoverImageDir.resolve(podcast.mainImageFileName)
+  def srcEpisodeAudioFilePath(podcast : Podcast, episode : Episode)        : Path         = srcAudioDir.resolve(episode.sourceAudioFileName)
+  def srcEpisodeRootDirPath(podcast : Podcast, episode : Episode)          : Path         = srcEpisodeRootDir.resolve(episode.uid)
+  def mbSrcEpisodeCoverImageFilePath(podcast : Podcast, episode : Episode) : Option[Path] = episode.mbSourceImageFileName.map( sifn => srcAudioDir.resolve(sifn) )
 
   def initDirs() : Unit =
     require(Files.exists(baseDir), s"Podcast build base directory '${baseDir.toAbsolutePath}' must exist before build directories can be created.")
@@ -56,7 +56,7 @@ class Build(
     Files.createDirectories(srcStaticDir)
     Files.createDirectories(srcAudioDir)
     Files.createDirectories(srcEpisodeRootDir)
-    Files.createDirectories(srcImageDir)
+    Files.createDirectories(srcCoverImageDir)
     Files.createDirectories(libDir)
 
   def libJars : List[Path] =
