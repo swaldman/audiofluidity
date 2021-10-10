@@ -1,7 +1,29 @@
 # Audiofluidity
 
-A simple Scala 3 static site generator for podcasts
+A simple Scala-cenric static site generator for podcasts
 
+Table of Contents
+=================
+
+* [Audiofluidity](#audiofluidity)
+  * [Getting Started](#getting-started)
+    * [Prerequisites](#prerequisites)
+    * [Initialize a project directory](#initialize-a-project-directory)
+    * [Supply initial resources](#supply-initial-resources)
+    * [Define our PodcastGenerator](#define-our-podcastgenerator)
+      * [Podcast\-level values](#podcast-level-values)
+      * [Episode\-level values](#episode-level-values)
+      * [Putting it all together](#putting-it-all-together)
+    * [Generating your podcast](#generating-your-podcast)
+    * [Customizing your podcast website](#customizing-your-podcast-website)
+    * [Deploying your podcast](#deploying-your-podcast)
+    * [Testing and submitting your podcast](#testing-and-submitting-your-podcast)
+  * [Example podcast](#example-podcast)
+  * [Developer Resources](#developer-resources)
+      * [Podcast RSS](#podcast-rss)
+      * [Podcast RSS Validators](#podcast-rss-validators)
+      * [Scala 3 compilation at runtime](#scala-3-compilation-at-runtime)
+      * [Scala XML](#scala-xml)
 
 ## Getting Started
 
