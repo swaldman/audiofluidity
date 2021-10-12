@@ -1,6 +1,6 @@
 # Audiofluidity
 
-A simple Scala-cenric static site generator for podcasts
+A simple Scala-centric static site generator for podcasts
 
   * [Getting Started](#getting-started)
     * [Prerequisites](#prerequisites)
