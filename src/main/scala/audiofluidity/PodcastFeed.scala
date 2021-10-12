@@ -175,8 +175,11 @@ case class PodcastFeed private(channelIn : Channel, channelD : Decoration.Channe
       osw.close()
     immutable.ArraySeq.ofByte(baos.toByteArray)
 
+  def durationInSeconds( podcast : Podcast, episode : Episode ) : Option[Long] =
+    itemDs.get(_guid(podcast, episode)).flatMap( _.mbItunesDuration).map( _.seconds )
+
   def humanReadableDuration( podcast : Podcast, episode : Episode ) : Option[String] =
-    itemDs.get(_guid(podcast, episode)).flatMap( _.mbItunesDuration).map( id => readableDuration(id.seconds) )
+    durationInSeconds( podcast : Podcast, episode : Episode ).map( readableDuration )
 
   private def readableDuration(durationSecs : Long) : String =
     val secondsField = durationSecs % 60

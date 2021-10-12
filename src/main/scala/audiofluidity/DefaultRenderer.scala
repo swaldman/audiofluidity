@@ -106,7 +106,7 @@ class DefaultRenderer extends Renderer:
         case _ : NumberFormatException => ""
     s"""
        |<li>
-       |  <p><span class="episodelistnumber">${epiNumberOrEmpty}</span> <span class="episodelisttitle"><a href="${layout.episodeRoot(podcast, episode)}">${episode.title}</a></span> <span class="episodelistaudiolink">[<a href="${layout.episodeRoot(podcast,episode).resolve(layout.episodeAudioPath(podcast,episode))}">audio</a>]</span> <span class="episodelinkduration">${duration(podcast,episode,feed)}</span> <span class="episodelistpubdate">${episode.publicationDate}</span><p>
+       |  <p><span class="episodelistpubdate">${episode.publicationDate}</span> <span class="episodelistnumber">${epiNumberOrEmpty}</span> <span class="episodelisttitle"><a href="${layout.episodeRoot(podcast, episode)}">${episode.title}</a></span> <span class="episodelistduration">${duration(podcast,episode,feed)}</span> <span class="episodelistaudiolink">[<a href="${layout.episodeRoot(podcast,episode).resolve(layout.episodeAudioPath(podcast,episode))}">audio</a>]</span><p>
        |  ${episode.mbSummary.fold("")(summary =>"<p>" + summary + "</p>")}
        |</li>
        |""".stripMargin
