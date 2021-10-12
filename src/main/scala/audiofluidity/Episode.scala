@@ -12,6 +12,7 @@ final case class Episode(
   sourceAudioFileName   : String,
   publicationDate       : String,                                           // Format: YYYY-MM-DD
   publicationTime       : String                  = "12:00",                // Format HH:MM, 24 hour time
+  extraDescription      : String                         = "",              // appended to website descrion, omitted from RSS feed
   block                 : Boolean                 = false,                  // <itunes:block>Yes</itunes:block>
   episodeType           : ValidEpisodeType        = ValidEpisodeType.full,  // <itunes:episodeType>
   explicit              : Boolean                 = false,                  // <itunes:explicit>

@@ -28,6 +28,9 @@ class DefaultRenderer extends Renderer:
         |    <hr class="belowtitle podcast"/>
         |    <div class="description podcast">
         |    ${podcast.description}
+        |      <div class="extradescription podcast">
+        |        ${podcast.extraDescription}
+        |      </div>
         |    </div>
         |    <hr class="belowdescription podcast"/>
         |    <ul class="episodelist">
@@ -69,8 +72,11 @@ class DefaultRenderer extends Renderer:
         |    <hr class="belowtitle episode"/>
         |    <div class="description episode">
         |    ${episode.description}
+        |      <div class="extradescription episode">
+        |        ${episode.extraDescription}
+        |      </div>
         |    </div>
-        |    <div class="audiolink">Episode audio: [<a href="${layout.episodeAudioPath(podcast,episode)}">${layout.episodeAudioPath(podcast,episode).suffix.getOrElse("???")}</a>]</div>
+        |    <div class="audiolink"><span class="audiolinklabel">Episode audio:</span> [<a href="${layout.episodeAudioPath(podcast,episode)}">${layout.episodeAudioPath(podcast,episode).suffix.getOrElse("???")}</a>]</div>
         |    <hr class="belowdescription episode"/>
         |    ${episode.mbAuthorEmail.fold("")(email => s"<p class=\"author\">Author: <a href=\"mailto:${email}\">${email}</a></p>")}
         |    <p class="publishedwhen">Published ${when.format(DateTimeFormatter.RFC_1123_DATE_TIME)}.</p>
@@ -95,12 +101,12 @@ class DefaultRenderer extends Renderer:
 
   private def episodeListElement(layout : Layout, podcast : Podcast, episode : Episode) : String =
     val epiNumberOrEmpty =
-      try "Episode " + episode.uid.toInt + ": "
+      try "Episode " + episode.uid.toInt + ":"
       catch
         case _ : NumberFormatException => ""
     s"""
        |<li>
-       |  <p><b><span class="episodenumber">${epiNumberOrEmpty}</span><a href="${layout.episodeRoot(podcast, episode)}">${episode.title}</a></b> [<a href="${layout.episodeRoot(podcast,episode).resolve(layout.episodeAudioPath(podcast,episode))}">audio</a>] <span class="pubdate">${episode.publicationDate}</span><p>
+       |  <p><span class="episodelistnumber">${epiNumberOrEmpty}</span> <span class="episodelisttitle"><a href="${layout.episodeRoot(podcast, episode)}">${episode.title}</a></span> <span class="episodelistaudiolink">[<a href="${layout.episodeRoot(podcast,episode).resolve(layout.episodeAudioPath(podcast,episode))}">audio</a>]</span> <span class="episodelistpubdate">${episode.publicationDate}</span><p>
        |  ${episode.mbSummary.fold("")(summary =>"<p>" + summary + "</p>")}
        |</li>
        |""".stripMargin

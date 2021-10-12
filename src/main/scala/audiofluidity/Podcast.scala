@@ -19,6 +19,7 @@ final case class Podcast(
   defaultAuthorEmail     : String,
   episodes               : immutable.Seq[Episode],
   itunesCategories       : immutable.Seq[Itunes.Category] = immutable.Seq.empty,
+  extraDescription       : String                         = "",                       // appended to website descrion, omitted from RSS feed
   zoneId                 : ZoneId                         = ZoneId.of("US/Pacific"),
   mbLanguage             : Option[LanguageCode]           = None,
   mbAdmin                : Option[Admin]                  = None,                      // <itunes:owner> and <webMaster>

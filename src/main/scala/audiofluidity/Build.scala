@@ -48,7 +48,7 @@ class Build(
   def srcMainCoverImageFilePath(podcast : Podcast)                         : Path         = srcCoverImageDir.resolve(podcast.mainCoverImageFileName)
   def srcEpisodeAudioFilePath(podcast : Podcast, episode : Episode)        : Path         = srcAudioDir.resolve(episode.sourceAudioFileName)
   def srcEpisodeRootDirPath(podcast : Podcast, episode : Episode)          : Path         = srcEpisodeRootDir.resolve(episode.uid)
-  def mbSrcEpisodeCoverImageFilePath(podcast : Podcast, episode : Episode) : Option[Path] = episode.mbCoverImageFileName.map( sifn => srcAudioDir.resolve(sifn) )
+  def mbSrcEpisodeCoverImageFilePath(podcast : Podcast, episode : Episode) : Option[Path] = episode.mbCoverImageFileName.map( sifn => srcCoverImageDir.resolve(sifn) )
 
   def initDirs() : Unit =
     require(Files.exists(baseDir), s"Podcast build base directory '${baseDir.toAbsolutePath}' must exist before build directories can be created.")
