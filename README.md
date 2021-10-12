@@ -133,7 +133,7 @@ class AudiofluidityGenerator extends PodcastGenerator.Base:
   val deployer = new Deployer.Exec(/* preparsedCommand = immutable.Seq("rsync", "-av", ".", "user@host:/web/server/root") */)
 ```
 
-Basically, we'll want to fill in all of the blanks marked `???`. We are writing Scala code here, so Strings should be provided
+Basically, we'll want to fill in all of the blanks marked `???`. We are writing Scala code here, so Strings should usually be provided
 as double-quoted string literals. Very helpfully here, we can also use thrice-double-quoted multiline string literals.
 
 #### Podcast-level values

@@ -9,7 +9,7 @@ import scala.collection.*
 // I'd really rather use ScalaTags, but they're not available yet for Scala 3
 
 class DefaultRenderer extends Renderer:
-  def generateMainHtml( build : Build, layout : Layout, podcast: Podcast ) : String =
+  def generateMainHtml( build : Build, layout : Layout, podcast : Podcast, feed : PodcastFeed ) : String =
     s"""|<html>
         |  <head>
         |     <title>${podcast.shortestTitle}</title>
@@ -34,7 +34,7 @@ class DefaultRenderer extends Renderer:
         |    </div>
         |    <hr class="belowdescription podcast"/>
         |    <ul class="episodelist">
-        |      ${podcast.episodes.map(episodeListElement(layout,podcast,_)).mkString("\n")}
+        |      ${podcast.episodes.map(episodeListElement(layout,podcast,_,feed)).mkString("\n")}
         |    </ul>
         |    <hr class="belowepisodelist podcast"/>
         |    <div class="endcredits">
@@ -44,7 +44,7 @@ class DefaultRenderer extends Renderer:
         |    </div>
         |  </body>
         |</html>""".stripMargin
-  def generateEpisodeHtml( build : Build, layout : Layout, podcast: Podcast, episode : Episode ) : String =
+  def generateEpisodeHtml( build : Build, layout : Layout, podcast: Podcast, episode : Episode, feed : PodcastFeed ) : String =
     val when = episode.zonedDateTime(podcast.zoneId)
 
     extension (p : Path)
@@ -76,7 +76,7 @@ class DefaultRenderer extends Renderer:
         |        ${episode.extraDescription}
         |      </div>
         |    </div>
-        |    <div class="audiolink"><span class="audiolinklabel">Episode audio:</span> [<a href="${layout.episodeAudioPath(podcast,episode)}">${layout.episodeAudioPath(podcast,episode).suffix.getOrElse("???")}</a>]</div>
+        |    <div class="audiolink"><span class="audiolinklabel">Episode audio:</span> <span class="audiolinktext">[<a href="${layout.episodeAudioPath(podcast,episode)}">${layout.episodeAudioPath(podcast,episode).suffix.getOrElse("???")}</a>]</span> <span class="audiolinkduration">&mdash; ${duration(podcast, episode, feed)}</span></div>
         |    <hr class="belowdescription episode"/>
         |    ${episode.mbAuthorEmail.fold("")(email => s"<p class=\"author\">Author: <a href=\"mailto:${email}\">${email}</a></p>")}
         |    <p class="publishedwhen">Published ${when.format(DateTimeFormatter.RFC_1123_DATE_TIME)}.</p>
@@ -99,15 +99,17 @@ class DefaultRenderer extends Renderer:
 
   private def episodeSequencePfx(episode : Episode) = mbEpisodeSequencePfx(episode).get
 
-  private def episodeListElement(layout : Layout, podcast : Podcast, episode : Episode) : String =
+  private def episodeListElement(layout : Layout, podcast : Podcast, episode : Episode, feed : PodcastFeed) : String =
     val epiNumberOrEmpty =
       try "Episode " + episode.uid.toInt + ":"
       catch
         case _ : NumberFormatException => ""
     s"""
        |<li>
-       |  <p><span class="episodelistnumber">${epiNumberOrEmpty}</span> <span class="episodelisttitle"><a href="${layout.episodeRoot(podcast, episode)}">${episode.title}</a></span> <span class="episodelistaudiolink">[<a href="${layout.episodeRoot(podcast,episode).resolve(layout.episodeAudioPath(podcast,episode))}">audio</a>]</span> <span class="episodelistpubdate">${episode.publicationDate}</span><p>
+       |  <p><span class="episodelistnumber">${epiNumberOrEmpty}</span> <span class="episodelisttitle"><a href="${layout.episodeRoot(podcast, episode)}">${episode.title}</a></span> <span class="episodelistaudiolink">[<a href="${layout.episodeRoot(podcast,episode).resolve(layout.episodeAudioPath(podcast,episode))}">audio</a>]</span> <span class="episodelinkduration">${duration(podcast,episode,feed)}</span> <span class="episodelistpubdate">${episode.publicationDate}</span><p>
        |  ${episode.mbSummary.fold("")(summary =>"<p>" + summary + "</p>")}
        |</li>
        |""".stripMargin
+
+  private def duration(podcast : Podcast, episode : Episode, feed : PodcastFeed) : String = feed.humanReadableDuration(podcast, episode).getOrElse("??:??")
 end DefaultRenderer

@@ -141,14 +141,14 @@ def generate(build : Build, layout : Layout, renderer : Renderer, podcast : Podc
   Files.createDirectories(destMainImagePath.getParent)
   Files.copy(srcMainImageFilePath, destMainImagePath, StandardCopyOption.REPLACE_EXISTING)
   val destMainHtmlPath = build.podcastgenDir.resolve(layout.mainHtmlPath(podcast))
-  Files.writeString(destMainHtmlPath,renderer.generateMainHtml(build, layout, podcast), scala.io.Codec.UTF8.charSet)
-  podcast.episodes.foreach( episode => generateEpisode(build, layout, renderer, podcast, episode) )
+  Files.writeString(destMainHtmlPath,renderer.generateMainHtml(build, layout, podcast, podcastFeed), scala.io.Codec.UTF8.charSet)
+  podcast.episodes.foreach( episode => generateEpisode(build, layout, renderer, podcast, episode, podcastFeed) )
   val srcStaticDirPath = build.srcStaticDir
   val destStaticDirPath = build.podcastgenDir
   if Files.exists(srcStaticDirPath) then recursiveCopyDirectory(srcStaticDirPath,destStaticDirPath)
 end generate
 
-private def generateEpisode(build : Build, layout : Layout, renderer : Renderer, podcast: Podcast, episode : Episode ) : Unit =
+private def generateEpisode(build : Build, layout : Layout, renderer : Renderer, podcast: Podcast, episode : Episode, podcastFeed : PodcastFeed ) : Unit =
   def root( path : Path ) = build.podcastgenDir.resolve(path)
   val episodeRootPath = root(layout.episodeRoot(podcast,episode))
   def episodeRoot(path : Path) = episodeRootPath.resolve(path)
@@ -164,7 +164,7 @@ private def generateEpisode(build : Build, layout : Layout, renderer : Renderer,
     Files.createDirectories(destEpisodeImagePath.getParent)
     copyFile(srcEpisodeImagePath,destEpisodeImagePath)
   val episodeIndexHtmlPath = episodeRoot(layout.episodeHtmlPath(podcast,episode))
-  val episodeIndexHtml = renderer.generateEpisodeHtml(build, layout, podcast, episode)
+  val episodeIndexHtml = renderer.generateEpisodeHtml(build, layout, podcast, episode, podcastFeed)
   Files.writeString(episodeIndexHtmlPath, episodeIndexHtml, scala.io.Codec.UTF8.charSet)
   val srcEpisodeRootPath = build.srcEpisodeRootDirPath(podcast,episode)
   if Files.exists(srcEpisodeRootPath) then recursiveCopyDirectory(srcEpisodeRootPath,episodeRootPath)

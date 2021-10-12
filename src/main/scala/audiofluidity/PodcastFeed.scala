@@ -175,4 +175,14 @@ case class PodcastFeed private(channelIn : Channel, channelD : Decoration.Channe
       osw.close()
     immutable.ArraySeq.ofByte(baos.toByteArray)
 
+  def humanReadableDuration( podcast : Podcast, episode : Episode ) : Option[String] =
+    itemDs.get(_guid(podcast, episode)).flatMap( _.mbItunesDuration).map( id => readableDuration(id.seconds) )
+
+  private def readableDuration(durationSecs : Long) : String =
+    val secondsField = durationSecs % 60
+    val durationMins = durationSecs / 60
+    val minsField    = durationMins % 60
+    val hoursField   = durationMins / 60
+    if hoursField > 0 then f"$hoursField%s:$minsField%02d:$secondsField%02d" else f"$minsField%s:$secondsField%02d"
+
 end PodcastFeed

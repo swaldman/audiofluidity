@@ -18,7 +18,7 @@ object Audiofluidity {
 
 
 
-  private def ensureConfigDirConsistentWithBuild( baseDir : Path, build : Build, init : Boolean = false) : Unit =
+  private def ensureConfigDirConsistentWithBuild( baseDir : Path, build : Build, init : Boolean = false) : Boolean =
 
     val configDir = baseDir.resolve(AudiofluidityConfigDirName)
     val configPropsFile = configDir.resolve(AudiofluidityPropertiesFileName)
@@ -39,14 +39,19 @@ object Audiofluidity {
       if writBuildClassName == null then
         props.put(ConfigPropBuildClassName, buildClassName)
         rewrite()
+        true
       else if writBuildClassName != buildClassName then
         val msg0 = s"This audiofluidity build directory was initially claimed for build structure '${writBuildClassName}', but you are currently operating on it with '${buildClassName}'"
         val msg1 = s"If you wish operate on this directory with the new, perhaps inconsistent build, remove the key '${ConfigPropBuildClassName}' from '${configPropsFile}''"
         SEVERE.log(msg0)
         SEVERE.log(msg1)
         throw new InconsistentBuildException(msg0 + " " + msg1)
+      else
+        true
       end if
-    else WARNING.log(s"'${configDir}' does not exist. Cannot validate or update '${AudiofluidityPropertiesFileName}'")
+    else
+      WARNING.log(s"'${configDir}' does not exist. Cannot validate or update '${AudiofluidityPropertiesFileName}'")
+      false
 
   @main def go(args : String*) : Unit =
 
@@ -89,7 +94,8 @@ object Audiofluidity {
       INFO.log("Podcast template initialized.")
 
     def doClean =
-      ensureConfigDirConsistentWithBuild( baseDirPath, build )
+      val check = ensureConfigDirConsistentWithBuild( baseDirPath, build )
+      if (!check) throw new AudiofluidityException(s"Clean aborted. Could not validate the structure of the build, won't remove files we may not understand.")
       recursiveDeleteDirectory(build.tmpDir, leaveTop = true)
       recursiveDeleteDirectory(build.podcastgenDir, leaveTop = true)
       INFO.log(s"Distribution cleaned ('${build.tmpDir}' and '${build.podcastgenDir}' cleared.)")

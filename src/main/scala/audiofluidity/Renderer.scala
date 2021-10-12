@@ -11,8 +11,8 @@ import scala.collection.*
 // the path specified staticResourceBase
 
 trait Renderer:
-  def generateMainHtml( build : Build, layout : Layout, podcast : Podcast )                       : String
-  def generateEpisodeHtml( build : Build, layout : Layout, podcast : Podcast, episode : Episode ) : String
+  def generateMainHtml( build : Build, layout : Layout, podcast : Podcast, feed : PodcastFeed )                       : String
+  def generateEpisodeHtml( build : Build, layout : Layout, podcast : Podcast, episode : Episode, feed : PodcastFeed ) : String
 
   def staticResourceBase : Path
   def staticResources    : immutable.Set[Path]
