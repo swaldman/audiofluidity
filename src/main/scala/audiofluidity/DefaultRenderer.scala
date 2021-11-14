@@ -34,7 +34,7 @@ class DefaultRenderer extends Renderer:
         |    </div>
         |    <hr class="belowdescription podcast"/>
         |    <ul class="episodelist">
-        |      ${podcast.episodes.map(episodeListElement(layout,podcast,_,feed)).mkString("\n")}
+        |      ${podcast.episodes.reverse.map(episodeListElement(layout,podcast,_,feed)).mkString("\n")}
         |    </ul>
         |    <hr class="belowepisodelist podcast"/>
         |    <div class="endcredits">
