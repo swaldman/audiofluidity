@@ -37,6 +37,7 @@ final case class Podcast(
   complete               : Boolean                        = false,                     // <itunes:complete>
 ):
   require(mainUrl.last == '/', s"mainUrl: '${mainUrl}' must end with /")
+  require(nonUniqueEpisodeIds(episodes).isEmpty, s"Duplicate episode UIDs: ${nonUniqueEpisodeIds(episodes).mkString(", ")}")
   def shortestTitle = mbShortTitle.getOrElse(title)
 
 

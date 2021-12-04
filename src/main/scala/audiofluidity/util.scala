@@ -17,9 +17,18 @@ import com.mchange.sc.v1.log.MLevel.*
 
 given logger : MLogger = MLogger(this)
 
+private def nonUniqueEpisodeIds( episodes : immutable.Seq[Episode]) : immutable.Set[String] =
+  val uids = episodes.map(_.uid)
+  uids.diff(uids.distinct).toSet
+
 private def zonedDateTime( dateString : String, timeString : String, zoneId : ZoneId ) : ZonedDateTime =
   val ld  = LocalDate.parse( dateString )
-  val lt  = LocalTime.parse( timeString )
+
+  val normalizedTimeString =
+    val trimmed = timeString.trim
+    if (trimmed.length == 4 && trimmed(1) == ':') '0' +: trimmed else trimmed // special case for times like 3:10
+
+  val lt  = LocalTime.parse( normalizedTimeString )
   val ldt = LocalDateTime.of( ld, lt )
   ZonedDateTime.of( ldt, zoneId )
 
