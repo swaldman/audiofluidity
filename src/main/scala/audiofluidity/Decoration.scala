@@ -25,14 +25,14 @@ object Decoration:
     mbItunesSummary    : Option[Itunes.Summary]          = None,
     mbItunesTitle      : Option[Itunes.Title]            = None,
   ):
-      def includesItunesElements  : Boolean = true
-      def includesContentElements : Boolean = false
+    def includesItunesElements  : Boolean = true
+    def includesContentElements : Boolean = false
 
-      def decorate( channelElem : Elem ) : Elem = 
-        val newElems =
-          (itunesCategories.map( _.toElem ) :+ itunesImage.toElem :+ itunesExplicit.toElem) ++
-           enc(mbItunesAuthor) ++ enc(mbItunesBlock) ++ enc(mbItunesComplete) ++ enc(mbItunesKeywords) ++ enc(mbItunesNewFeedUrl) ++ enc(mbItunesOwner) ++ enc(mbItunesSummary) ++ enc(mbItunesTitle)
-        channelElem.copy( child = channelElem.child ++ newElems )
+    lazy val decorations =
+      (itunesCategories.map(_.toElem) :+ itunesImage.toElem :+ itunesExplicit.toElem) ++
+        enc(mbItunesAuthor) ++ enc(mbItunesBlock) ++ enc(mbItunesComplete) ++ enc(mbItunesKeywords) ++ enc(mbItunesNewFeedUrl) ++ enc(mbItunesOwner) ++ enc(mbItunesSummary) ++ enc(mbItunesTitle)
+
+    def decorate( channelElem : Elem ) : Elem = channelElem.copy( child = channelElem.child ++ decorations )
   end Channel
 
   case class Item (
@@ -49,14 +49,14 @@ object Decoration:
     mbItunesSummary     : Option[Itunes.Summary]     = None,
     mbItunesTitle       : Option[Itunes.Title]       = None,
   ):
-      def includesItunesElements  : Boolean = List(mbItunesBlock, mbItunesDuration, mbItunesEpisode, mbItunesEpisodeType, mbItunesExplicit, mbItunesImage, mbItunesKeywords, mbItunesSeason, mbItunesSubtitle, mbItunesSummary, mbItunesTitle).exists(_.nonEmpty)
-      def includesContentElements : Boolean = mbContentEncoded.nonEmpty
+    def includesItunesElements  : Boolean = List(mbItunesBlock, mbItunesDuration, mbItunesEpisode, mbItunesEpisodeType, mbItunesExplicit, mbItunesImage, mbItunesKeywords, mbItunesSeason, mbItunesSubtitle, mbItunesSummary, mbItunesTitle).exists(_.nonEmpty)
+    def includesContentElements : Boolean = mbContentEncoded.nonEmpty
 
-      def decorate( itemElem : Elem ) : Elem =
-        val newElems =
-          immutable.Seq.empty[Elem] ++ enc(mbContentEncoded) ++ enc(mbItunesBlock) ++ enc(mbItunesDuration) ++ enc(mbItunesEpisode) ++ enc(mbItunesEpisodeType) ++ enc(mbItunesExplicit) ++
-          enc(mbItunesImage) ++ enc(mbItunesKeywords) ++ enc(mbItunesSeason) ++ enc(mbItunesSubtitle) ++ enc(mbItunesSummary) ++ enc(mbItunesTitle)
-        itemElem.copy( child = itemElem.child ++ newElems )              
+    lazy val decorations =
+      immutable.Seq.empty[Elem] ++ enc(mbContentEncoded) ++ enc(mbItunesBlock) ++ enc(mbItunesDuration) ++ enc(mbItunesEpisode) ++ enc(mbItunesEpisodeType) ++ enc(mbItunesExplicit) ++
+        enc(mbItunesImage) ++ enc(mbItunesKeywords) ++ enc(mbItunesSeason) ++ enc(mbItunesSubtitle) ++ enc(mbItunesSummary) ++ enc(mbItunesTitle)
+
+    def decorate( itemElem : Elem ) : Elem = itemElem.copy( child = itemElem.child ++ decorations )
   end Item
 
 end Decoration
