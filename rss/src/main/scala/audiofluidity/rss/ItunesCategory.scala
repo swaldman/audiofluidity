@@ -1,6 +1,6 @@
-package audiofluidity
+package audiofluidity.rss
 
-import rss.Element.Itunes
+import Element.Itunes
 
 // see https://help.apple.com/itc/podcasts_connect/#/itc9267a2f12
 // we're relying on scala-xml to escape out ampersands

@@ -1,5 +1,7 @@
 package audiofluidity
 
+import audiofluidity.rss.ItunesCategory
+
 import scala.collection.*
 
 object Play:
