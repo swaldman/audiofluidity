@@ -81,7 +81,7 @@ object RssFeed:
     RssFeed( channel, channelDecorations = channelDecorations.toList, itemDecorations = itemsD, namespaces = namespaces )
 
 
-case class RssFeed( channel : Channel, channelDecorations : List[Elem], itemDecorations : List[immutable.Seq[Elem]], namespaces : List[Namespace] ):
+case class RssFeed( channel : Channel, channelDecorations : immutable.Seq[Elem], itemDecorations : immutable.Seq[immutable.Seq[Elem]], namespaces : List[Namespace] ):
 
   // we use a val rather than a def or lazy val so we effectively validate itemDecoration length on construction
   // it's rare one would build an RssFeed without intending to generate the Xml
@@ -90,10 +90,13 @@ case class RssFeed( channel : Channel, channelDecorations : List[Elem], itemDeco
     val (undecoratedItems, otherChannelChildren) =
       // i wish there were some hybrid of collect and partition...
       val (undecoratedItemNodes, otherChildren) = undecoratedChannel.child.partition {
-        case Elem(null, "item", _, _, _, _) => true
-        case _                              => false
+        // for some reason, destructuring matches aren't working
+        //case Elem(null, "item", _, _, _, _) => true
+        case elem : Elem if elem.prefix == null && elem.label == "item" => true
+        case _                                                          => false
       }
       (undecoratedItemNodes.map(_.asInstanceOf[Elem]), otherChildren)
+
     val decoratedItems =
       val mustDecorateItems = itemDecorations.nonEmpty
       if mustDecorateItems && (undecoratedItems.length != itemDecorations.length) then
@@ -106,7 +109,9 @@ case class RssFeed( channel : Channel, channelDecorations : List[Elem], itemDeco
 
     val decoratedRssChildren =
       RssFeed.EmptyChannelRssElem.child.map {
-        case Elem(null, "channel", _, _, _, _) => decoratedChannelElem
+        // for some reason, destructuring matches aren't working
+        //case Elem(null, "channel", _, _, _, _) => decoratedChannelElem
+        case elem : Elem if elem.prefix == null && elem.label == "channel" => decoratedChannelElem
         case other => other
       }
     RssFeed.EmptyChannelRssElem.copy(scope=Namespace.toBinding(namespaces),child=decoratedRssChildren)

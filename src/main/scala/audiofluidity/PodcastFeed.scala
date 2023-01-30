@@ -1,6 +1,8 @@
 package audiofluidity
 
-import java.io.{ByteArrayOutputStream, File, StringWriter, OutputStreamWriter}
+import audiofluidity.PodcastFeed.Namespaces
+
+import java.io.{ByteArrayOutputStream, File, OutputStreamWriter, StringWriter}
 import java.time.{Instant, ZonedDateTime}
 import scala.collection.*
 import scala.xml.{Elem, NamespaceBinding, Node, PrettyPrinter, TopScope, XML}
@@ -8,8 +10,11 @@ import rss.Element.*
 import rss.Xmlable.given
 
 object PodcastFeed:
-  private val RdfContentModuleNamespaceBinding = new NamespaceBinding("content","http://purl.org/rss/1.0/modules/content/", TopScope)
-  private val AppleNamespaceBinding = new NamespaceBinding("itunes","http://www.itunes.com/dtds/podcast-1.0.dtd", RdfContentModuleNamespaceBinding)
+
+  private val Namespaces = List(
+    rss.Namespace.RdfContent,
+    rss.Namespace.ApplePodcast
+  )
 
   private def item(build : Build, layout : Layout, podcast : Podcast, episode : Episode, examineMedia : Boolean) : (Item, Decoration.Item) =
     val guid       = _guid(podcast, episode)
@@ -128,55 +133,28 @@ object PodcastFeed:
   def apply(build : Build, layout : Layout, podcast : Podcast, examineMedia : Boolean = true) : PodcastFeed =
     val reverseChronologicalEpisodes = podcast.episodes.sortBy( episode => Tuple2(episode.zonedDateTime(podcast.zoneId),System.identityHashCode(episode)) )(summon[Ordering[Tuple2[ZonedDateTime,Int]]].reverse)
     val itemItemDs = reverseChronologicalEpisodes.map(e => item(build, layout, podcast, e, examineMedia) )
-    val items = itemItemDs.map( _._1 )
+    val (items, itemDs) = itemItemDs.foldLeft(Tuple2(Vector.empty[Item],Vector.empty[Decoration.Item])) { (accum,next) =>
+      (accum._1 :+ next._1, accum._2 :+ next._2)
+    }
+
     val (channelIn, channelD) = channel(build, layout, podcast, items)
     val itemDsMap = itemItemDs.map { case (item, itemD) => (item.guid.get.id, itemD)}.toMap // we always create <guid> elements, so get should always succeed
-    PodcastFeed(channelIn, channelD, itemDsMap)
+    PodcastFeed(channelIn, channelD, itemDs, itemDsMap)
 
 end PodcastFeed // object
 
-case class PodcastFeed private(channelIn : Channel, channelD : Decoration.Channel, itemDs : immutable.Map[String,Decoration.Item]):
+case class PodcastFeed private(channelIn : Channel, channelD : Decoration.Channel, itemDs : immutable.Seq[Decoration.Item], itemDsByGuid : immutable.Map[String,Decoration.Item]):
 
   private def itemGuid( itemElem : Elem ) : String = uniqueChildElem(itemElem, "guid").text
 
-  private def decorateItem( itemElem : Elem ) : Elem =
-    val guid  = itemGuid( itemElem )
-    val itemD = itemDs( guid )
-    itemD.decorate( itemElem )
+  val rssFeed = rss.RssFeed( channelIn, channelD.decorations, itemDs.map( _.decorations ), Namespaces )
 
-  lazy val undecoratedRss = Rss(channel=channelIn)
+  lazy val asXmlText = rssFeed.asXmlText
 
-  lazy val decoratedRssElem : Elem =
-    val undecoratedRssElem = undecoratedRss.toElem.copy(scope=PodcastFeed.AppleNamespaceBinding)
-    val undecoratedChannelElem = uniqueChildElem(undecoratedRssElem, "channel")
-    val oldItems = undecoratedChannelElem.child.collect { case e : Elem if e.prefix == null && e.label == "item" => e }
-    val nonItems = undecoratedChannelElem.child.filter( n => !oldItems.contains(n) )
-    val undecoratedNoItemChannelElem = undecoratedChannelElem.copy( child = nonItems )
-    val decoratedNoItemChannelElem = channelD.decorate( undecoratedNoItemChannelElem )
-    val decoratedChannelElem = decoratedNoItemChannelElem.copy( child = decoratedNoItemChannelElem.child ++ oldItems.map( decorateItem ) )
-    undecoratedRssElem.copy( child = decoratedChannelElem :: Nil )
-
-  lazy val asXmlText =
-    // to autogenerate the XML declaration, but no pretty print...
-    // thanks https://stackoverflow.com/questions/8965025/how-do-you-add-xml-document-info-with-scala-xml
-    //val sw = new StringWriter()
-    //XML.write(sw,decoratedRssElem,"UTF-8",true,null) 
-    //sw.toString
-    val pp = new PrettyPrinter(80,2)
-    val noXmlDeclarationPretty = pp.format(decoratedRssElem)
-    s"<?xml version='1.0' encoding='UTF-8'?>\n\n${noXmlDeclarationPretty}"
-
-  lazy val bytes : immutable.Seq[Byte] =
-    val baos = new ByteArrayOutputStream()
-    val osw = new OutputStreamWriter( baos, scala.io.Codec.UTF8.charSet )
-    try
-      osw.write(asXmlText)
-    finally
-      osw.close()
-    immutable.ArraySeq.ofByte(baos.toByteArray)
+  lazy val bytes : immutable.Seq[Byte] = rssFeed.bytes
 
   def durationInSeconds( podcast : Podcast, episode : Episode ) : Option[Long] =
-    itemDs.get(_guid(podcast, episode)).flatMap( _.mbItunesDuration).map( _.seconds )
+    itemDsByGuid.get(_guid(podcast, episode)).flatMap( _.mbItunesDuration).map( _.seconds )
 
   def humanReadableDuration( podcast : Podcast, episode : Episode ) : Option[String] =
     durationInSeconds( podcast : Podcast, episode : Episode ).map( readableDuration )
