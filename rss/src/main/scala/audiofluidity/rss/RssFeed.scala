@@ -2,7 +2,7 @@ package audiofluidity.rss
 
 import java.time.ZonedDateTime
 import scala.collection.*
-import scala.xml.Elem
+import scala.xml.{Elem,PrettyPrinter}
 import Element.{Channel, Item}
 import Xmlable.given
 
@@ -85,7 +85,7 @@ case class RssFeed( channel : Channel, channelDecorations : List[Elem], itemDeco
 
   // we use a val rather than a def or lazy val so we effectively validate itemDecoration length on construction
   // it's rare one would build an RssFeed without intending to generate the Xml
-  val toRssElem : Elem =
+  val rssElem : Elem =
     val undecoratedChannel = channel.toElem
     val (undecoratedItems, otherChannelChildren) =
       // i wish there were some hybrid of collect and partition...
@@ -110,3 +110,11 @@ case class RssFeed( channel : Channel, channelDecorations : List[Elem], itemDeco
         case other => other
       }
     RssFeed.EmptyChannelRssElem.copy(scope=Namespace.toBinding(namespaces),child=decoratedRssChildren)
+
+  lazy val asXmlText : String =
+    val pp = new PrettyPrinter(80,2)
+    val noXmlDeclarationPretty = pp.format(rssElem)
+    s"<?xml version='1.0' encoding='UTF-8'?>\n\n${noXmlDeclarationPretty}"
+
+  lazy val bytes : immutable.Seq[Byte] =
+    immutable.ArraySeq.ofByte(asXmlText.getBytes(scala.io.Codec.UTF8.charSet))
