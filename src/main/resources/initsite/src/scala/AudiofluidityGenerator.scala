@@ -1,5 +1,6 @@
 import audiofluidity.*
-import audiofluidity.Element.Itunes
+import audiofluidity.rss.LanguageCode
+import audiofluidity.rss.Element.Itunes
 
 import java.time.ZoneId
 import scala.collection.*

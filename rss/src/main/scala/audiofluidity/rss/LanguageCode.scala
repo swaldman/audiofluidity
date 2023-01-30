@@ -1,4 +1,4 @@
-package audiofluidity
+package audiofluidity.rss
 
 // see https://cyber.harvard.edu/rss/languages.html
 

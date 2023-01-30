@@ -1,7 +1,6 @@
 package audiofluidity
 
 import java.nio.file.Path
-import java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
 import scala.collection.*
 
 val DefaultGenerator = "Audiofluidity Static Podcast Site Generator"
@@ -14,8 +13,6 @@ val SupportedImageFileExtensions = immutable.Map(
   "jpg" -> "image/jpeg",
   "png" -> "image/png"
 )
-
-val RssDateTimeFormatter = RFC_1123_DATE_TIME
 
 val DefaultPodcastGeneratorFqcn = "AudiofluidityGenerator" // intentionally in the default package
 

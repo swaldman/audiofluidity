@@ -1,11 +1,15 @@
-package audiofluidity
+package audiofluidity.rss
 
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
+
 import scala.xml.{Elem, MetaData, Node, Null, PCData, Text, TopScope, UnprefixedAttribute}
 import Element.*
 import Element.{Content, Itunes}
 
 object Xmlable:
+  private val RssDateTimeFormatter = RFC_1123_DATE_TIME
+
   private def elem(label : String, attributes1 : MetaData, children : Node*) : Elem =
     new Elem(prefix=null, label=label, attributes1=attributes1, scope=TopScope, minimizeEmpty=true, children : _*)
   private def elem(label : String, children : Node*) : Elem = elem(label, Null, children : _*)

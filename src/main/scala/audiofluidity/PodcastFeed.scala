@@ -4,8 +4,8 @@ import java.io.{ByteArrayOutputStream, File, StringWriter, OutputStreamWriter}
 import java.time.{Instant, ZonedDateTime}
 import scala.collection.*
 import scala.xml.{Elem, NamespaceBinding, Node, PrettyPrinter, TopScope, XML}
-import Element.*
-import Xmlable.given
+import rss.Element.*
+import rss.Xmlable.given
 
 object PodcastFeed:
   private val RdfContentModuleNamespaceBinding = new NamespaceBinding("content","http://purl.org/rss/1.0/modules/content/", TopScope)

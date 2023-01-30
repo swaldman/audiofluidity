@@ -5,8 +5,8 @@ import java.time.ZoneId
 
 import scala.collection.*
 
-import Element.Itunes  
-import Element.Itunes.{ValidEpisodeType, ValidPodcastType}
+import rss.Element.Itunes
+import rss.Element.Itunes.{ValidEpisodeType, ValidPodcastType}
 
 final case class Podcast(
   mainUrl                : String,
@@ -21,7 +21,7 @@ final case class Podcast(
   itunesCategories       : immutable.Seq[Itunes.Category] = immutable.Seq.empty,
   extraDescription       : String                         = "",                       // appended to website descrion, omitted from RSS feed
   zoneId                 : ZoneId                         = ZoneId.of("US/Pacific"),
-  mbLanguage             : Option[LanguageCode]           = None,
+  mbLanguage             : Option[rss.LanguageCode]       = None,
   mbAdmin                : Option[Admin]                  = None,                      // <itunes:owner> and <webMaster>
   mbExtraData            : Option[Any]                    = None,
   mbCopyrightHolder      : Option[String]                 = None,

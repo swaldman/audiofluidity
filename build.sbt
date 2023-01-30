@@ -1,20 +1,27 @@
-val ScalaVersion = "3.0.2"
+ThisBuild / organization := "com.mchange"
+ThisBuild / version      := "0.0.2-SNAPSHOT"
+ThisBuild / maintainer   := "swaldman@mchange.com"
+ThisBuild / scalaVersion := "3.2.1"
 
 enablePlugins(JavaAppPackaging)
 
 lazy val root = project
   .in(file("."))
+  .dependsOn(rss)
   .settings(
-    organization        := "com.mchange",
     name                := "audiofluidity",
-    version             := "0.0.2-SNAPSHOT",
-    scalaVersion        := ScalaVersion,
-    maintainer          := "swaldman@mchange.com",
     libraryDependencies += "com.mchange" %% "mlog-scala" % "0.3.14",
-    libraryDependencies += "org.scala-lang" %% "scala3-compiler" % ScalaVersion,
-    libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "2.0.1",
     libraryDependencies += "com.mpatric" % "mp3agic" % "0.9.1",
+    libraryDependencies += "org.scala-lang" %% "scala3-compiler" % scalaVersion.value,
     resolvers += Resolver.mavenLocal,
     // libraryDependencies += "com.googlecode.soundlibs" % "mp3spi" % "1.9.5.4",
     // libraryDependencies += "io.d11" %% "zhttp" % "1.0.0.0-RC17"
   )
+
+lazy val rss = project
+  .in(file("rss"))
+  .settings(
+      name := "audiofluidity-rss",
+      libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "2.1.0"
+  )
+

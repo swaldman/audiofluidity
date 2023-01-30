@@ -3,8 +3,9 @@ package audiofluidity
 import scala.collection.*
 import scala.xml.Elem  
 
-import Element.{Content, Itunes}
-import Xmlable.given
+import rss.Element.{Content, Itunes}
+import rss.Xmlable
+import rss.Xmlable.given
 
 object Decoration:
 

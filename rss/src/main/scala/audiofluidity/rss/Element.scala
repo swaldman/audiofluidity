@@ -1,4 +1,4 @@
-package audiofluidity
+package audiofluidity.rss
 
 import java.time.ZonedDateTime
 import scala.collection.*

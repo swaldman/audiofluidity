@@ -1,6 +1,6 @@
 package audiofluidity
 
-import audiofluidity.Element.Itunes.ValidEpisodeType
+import audiofluidity.rss.Element.Itunes.ValidEpisodeType
 
 import java.time.ZoneId
 import scala.collection.*
