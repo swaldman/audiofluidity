@@ -7,9 +7,9 @@ enablePlugins(JavaAppPackaging)
 
 lazy val root = project
   .in(file("."))
-  .dependsOn(rss)
   .settings(
     name                := "audiofluidity",
+    libraryDependencies += "com.mchange" %% "audiofluidity-rss" % "0.0.1-SNAPSHOT",
     libraryDependencies += "com.mchange" %% "mlog-scala" % "0.3.14",
     libraryDependencies += "com.mpatric" % "mp3agic" % "0.9.1",
     libraryDependencies += "org.scala-lang" %% "scala3-compiler" % scalaVersion.value,
@@ -17,11 +17,3 @@ lazy val root = project
     // libraryDependencies += "com.googlecode.soundlibs" % "mp3spi" % "1.9.5.4",
     // libraryDependencies += "io.d11" %% "zhttp" % "1.0.0.0-RC17"
   )
-
-lazy val rss = project
-  .in(file("rss"))
-  .settings(
-      name := "audiofluidity-rss",
-      libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "2.1.0"
-  )
-

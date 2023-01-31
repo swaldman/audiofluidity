@@ -47,7 +47,7 @@ private def mp3FileDurationInSeconds( f : File ) : Long =
   mp3file.getLengthInSeconds()   
 
 private def uniqueChildElem(node : Node, elemName : String) : Elem =
-  rss.uniqueChildElem(node, elemName)
+  (node \ elemName).collect{ case e : Elem => e }.ensuring(_.length == 1, s"Expected unique child '${elemName}' of Node, found multiple or nonr.").head
 
 private def _guid(podcast : Podcast, episode : Episode) : String = s"${podcast.guidPrefix}${episode.uid}"
 
