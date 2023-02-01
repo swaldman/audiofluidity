@@ -7,7 +7,6 @@ import java.time.{Instant, ZonedDateTime}
 import scala.collection.*
 import scala.xml.{Elem, NamespaceBinding, Node, PrettyPrinter, TopScope, XML}
 import rss.Element.*
-import rss.Xmlable.given
 
 object PodcastFeed:
 
@@ -16,7 +15,7 @@ object PodcastFeed:
     rss.Namespace.ApplePodcast
   )
 
-  private def item(build : Build, layout : Layout, podcast : Podcast, episode : Episode, examineMedia : Boolean) : (Item, Decoration.Item) =
+  private def item(build : Build, layout : Layout, podcast : Podcast, episode : Episode, examineMedia : Boolean) : Item =
     val guid       = _guid(podcast, episode)
     val author     = episode.mbAuthorEmail.getOrElse(podcast.defaultAuthorEmail)
     val zoneId     = episode.mbZoneId.getOrElse( podcast.zoneId )
@@ -32,7 +31,7 @@ object PodcastFeed:
     val mbDurationInSeconds =
       if examineMedia && audioExtension == "mp3" then Some( mp3FileDurationInSeconds( sourceAudioFile ) ) else None
 
-    val itemOut = Item(
+    val standardItem = Item(
       title       = Title(episode.title),
       link        = Link(pathcat(podcast.mainUrl, layout.episodeRoot(podcast,episode))),
       description = Description(episode.description),
@@ -40,7 +39,7 @@ object PodcastFeed:
       categories  = immutable.Seq.empty,
       comments    = None,
       enclosure   = Some(Enclosure(url=destinationAudioFileUrl,length=sourceAudioFileLength,`type`=sourceAudioFileMimeType)),
-      guid        = Some(Guid(false, guid)),
+      guid        = Some(Guid(false, guid)), // we depend on a Guid for every item!
       pubDate     = Some(PubDate(pubDateZdt)),
       source      = None
     )
@@ -60,7 +59,7 @@ object PodcastFeed:
     val mbItunesSeason   = episode.mbSeasonNumber.map(n => Itunes.Season(n))
 
     val mbItunesKeywords = if episode.keywords.nonEmpty then Some(Itunes.Keywords(episode.keywords)) else None
-    val mbItunesBlock    = if episode.block then Some(Itunes.Block) else None
+    val mbItunesBlock    = if episode.block then Some(Itunes.Block()) else None
 
     val mbItunesImage =
       episode.mbCoverImageFileName.flatMap { sourceImageFileName =>
@@ -73,32 +72,33 @@ object PodcastFeed:
         }
       }
 
-    val itemD = Decoration.Item(
-      mbContentEncoded    = Some(contentEncoded),
-      mbItunesBlock       = mbItunesBlock,
-      mbItunesDuration    = mbDurationInSeconds.map(secs => Itunes.Duration(secs)),
-      mbItunesEpisode     = mbItunesEpisode,
-      mbItunesEpisodeType = Some(itunesEpisodeType),
-      mbItunesExplicit    = Some(Itunes.Explicit(episode.explicit)),
-      mbItunesImage       = mbItunesImage,
-      mbItunesKeywords    = if (episode.keywords.nonEmpty) Some(Itunes.Keywords(episode.keywords)) else None,
-      mbItunesSeason      = mbItunesSeason,
-      mbItunesSubtitle    = episode.mbSubtitle.map(st=>Itunes.Subtitle(st)),
-      mbItunesSummary     = episode.mbSummary.map(s=>Itunes.Summary(s)),
-      mbItunesTitle       = episode.mbShortTitle.map(t=>Itunes.Title(t)),
-    )
+    val extras =
+      List.newBuilder[rss.Element[?]]
+        .addOne(contentEncoded)
+        .addAll(mbItunesBlock)
+        .addAll(mbDurationInSeconds.map(secs => Itunes.Duration(secs)))
+        .addAll(mbItunesEpisode)
+        .addOne(itunesEpisodeType)
+        .addOne(Itunes.Explicit(episode.explicit))
+        .addAll(mbItunesImage)
+        .addAll(mbItunesKeywords)
+        .addAll(mbItunesSeason)
+        .addAll(episode.mbSubtitle.map(st=>Itunes.Subtitle(st)))
+        .addAll(episode.mbSummary.map(s=>Itunes.Summary(s)))
+        .addAll(episode.mbShortTitle.map(t=>Itunes.Title(t)))
+        .result()
 
-    (itemOut, itemD)
-      
+    standardItem.withExtras(extras)
+
   end item
 
-  private def channel(build : Build, layout : Layout, podcast : Podcast, items : immutable.Seq[Item]) : (Channel, Decoration.Channel) =
+  private def channel(build : Build, layout : Layout, podcast : Podcast, items : immutable.Seq[Item]) : Channel =
     val zdtNow = ZonedDateTime.now(podcast.zoneId)
     val title = Title(podcast.title)
     val link  = Link(podcast.mainUrl)
     val description = Description(podcast.description)
     val imageUrl = pathcat(podcast.mainUrl, layout.mainCoverImagePath(podcast))
-    val channelOut = Channel(
+    val standardChannel = Channel(
       title       = title,
       link        = link,
       description = description,
@@ -110,51 +110,58 @@ object PodcastFeed:
       generator   = Some( Generator(DefaultGenerator) ),
       items       = items
     )
-    
-    val channelD = Decoration.Channel(
-      itunesCategories   = podcast.itunesCategories,
-      itunesImage        = Itunes.Image(imageUrl),
-      itunesExplicit     = Itunes.Explicit(podcast.explicit),
-      mbItunesAuthor     = podcast.mbPublisher.map(fullName => Itunes.Author(fullName)),
-      mbItunesBlock      = if podcast.block then Some(Itunes.Block) else None,
-      mbItunesComplete   = if podcast.complete then Some(Itunes.Complete) else None,
-      mbItunesKeywords   = if (podcast.keywords.nonEmpty) Some(Itunes.Keywords(podcast.keywords)) else None,
-      mbItunesNewFeedUrl = podcast.mbNewFeedUrl.map(url => Itunes.NewFeedUrl(url)),
-      mbItunesOwner      = podcast.mbAdmin.map { case Admin(name, email) => Itunes.Owner(Itunes.Name(name),Itunes.Email(email)) },
-      mbItunesSubtitle   = podcast.mbSubtitle.map(st => Itunes.Subtitle(st)),
-      mbItunesSummary    = podcast.mbSummary.map(s => Itunes.Summary(s)),
-      mbItunesTitle      = podcast.mbShortTitle.map(t => Itunes.Title(t))    
-    )
 
-    (channelOut, channelD)
+    val extras =
+      List.newBuilder[rss.Element[?]]
+        .addAll(podcast.itunesCategories)
+        .addOne(Itunes.Image(imageUrl))
+        .addOne(Itunes.Explicit(podcast.explicit))
+        .addAll(podcast.mbPublisher.map(fullName => Itunes.Author(fullName)))
+        .addAll(if podcast.block then Some(Itunes.Block()) else None)
+        .addAll(if podcast.complete then Some(Itunes.Complete()) else None)
+        .addAll(if (podcast.keywords.nonEmpty) Some(Itunes.Keywords(podcast.keywords)) else None)
+        .addAll(podcast.mbNewFeedUrl.map(url => Itunes.NewFeedUrl(url)))
+        .addAll(podcast.mbAdmin.map { case Admin(name, email) => Itunes.Owner(Itunes.Name(name),Itunes.Email(email)) })
+        .addAll(podcast.mbSubtitle.map(st => Itunes.Subtitle(st)))
+        .addAll(podcast.mbSummary.map(s => Itunes.Summary(s)))
+        .addAll(podcast.mbShortTitle.map(t => Itunes.Title(t)))
+        .result()
+
+    standardChannel.withExtras(extras)
 
   end channel  
 
   def apply(build : Build, layout : Layout, podcast : Podcast, examineMedia : Boolean = true) : PodcastFeed =
     val reverseChronologicalEpisodes = podcast.episodes.sortBy( episode => Tuple2(episode.zonedDateTime(podcast.zoneId),System.identityHashCode(episode)) )(summon[Ordering[Tuple2[ZonedDateTime,Int]]].reverse)
-    val itemItemDs = reverseChronologicalEpisodes.map(e => item(build, layout, podcast, e, examineMedia) )
-    val (items, itemDs) = itemItemDs.foldLeft(Tuple2(Vector.empty[Item],Vector.empty[Decoration.Item])) { (accum,next) =>
-      (accum._1 :+ next._1, accum._2 :+ next._2)
-    }
-
-    val (channelIn, channelD) = channel(build, layout, podcast, items)
-    val itemDsMap = itemItemDs.map { case (item, itemD) => (item.guid.get.id, itemD)}.toMap // we always create <guid> elements, so get should always succeed
-    PodcastFeed(channelIn, channelD, itemDs, itemDsMap)
+    val items = reverseChronologicalEpisodes.map(e => item(build, layout, podcast, e, examineMedia) )
+    val c = channel(build, layout, podcast, items)
+    PodcastFeed(c)
 
 end PodcastFeed // object
 
-case class PodcastFeed private(channelIn : Channel, channelD : Decoration.Channel, itemDs : immutable.Seq[Decoration.Item], itemDsByGuid : immutable.Map[String,Decoration.Item]):
+case class PodcastFeed private(channel : Channel):
 
-  private def itemGuid( itemElem : Elem ) : String = uniqueChildElem(itemElem, "guid").text
-
-  val rssFeed = rss.RssFeed( channelIn, channelD.decorations, itemDs.map( _.decorations ), Namespaces )
+  val rssFeed = Rss( channel ).overNamespaces( Namespaces )
 
   lazy val asXmlText = rssFeed.asXmlText
 
   lazy val bytes : immutable.Seq[Byte] = rssFeed.bytes
 
+  lazy val itemsByGuid =
+    channel.items
+      .map( item => (item.guid, item) )
+      .collect { case (Some(guid), item) => (guid.id, item)}
+      .toMap
+
   def durationInSeconds( podcast : Podcast, episode : Episode ) : Option[Long] =
-    itemDsByGuid.get(_guid(podcast, episode)).flatMap( _.mbItunesDuration).map( _.seconds )
+    val guid = _guid(podcast, episode)
+    val item = itemsByGuid.get(guid).getOrElse{
+      throw AssertionError(
+        s"All episodes should map by guid to an item. no item for guid '${guid}' found in channel: ${channel}")
+    }
+    val durations = item.extraElements.collect { case duration : Itunes.Duration => duration }
+    assert( durations.length <= 1, "Multiple durations in item, audiofluidity bug: " + item )
+    durations.headOption.map( _.seconds )
 
   def humanReadableDuration( podcast : Podcast, episode : Episode ) : Option[String] =
     durationInSeconds( podcast : Podcast, episode : Episode ).map( readableDuration )
