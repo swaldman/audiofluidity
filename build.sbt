@@ -1,5 +1,5 @@
 ThisBuild / organization := "com.mchange"
-ThisBuild / version      := "0.0.2-SNAPSHOT"
+ThisBuild / version      := "0.0.2"
 ThisBuild / maintainer   := "swaldman@mchange.com"
 ThisBuild / scalaVersion := "3.2.1"
 
@@ -9,7 +9,7 @@ lazy val root = project
   .in(file("."))
   .settings(
     name                := "audiofluidity",
-    libraryDependencies += "com.mchange" %% "audiofluidity-rss" % "0.0.1-SNAPSHOT",
+    libraryDependencies += "com.mchange" %% "audiofluidity-rss" % "0.0.1",
     libraryDependencies += "com.mchange" %% "mlog-scala" % "0.3.14",
     libraryDependencies += "com.mpatric" % "mp3agic" % "0.9.1",
     libraryDependencies += "org.scala-lang" %% "scala3-compiler" % scalaVersion.value,
